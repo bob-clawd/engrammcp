@@ -9,7 +9,7 @@ public sealed class StoreMediumTermTool(IMemoryService memoryService) : Tool
     private const string MemoryName = "medium-term";
 
     [McpServerTool(Name = "store_mediumterm", Title = "Store Medium-Term Memory")]
-    [Description("Use this tool for remember-worthy context that will likely help in future tasks or conversations but may change over time.")]
+    [Description("Use this tool for remember-worthy context that will likely help in future tasks or conversations but may change over time. Capacity: 20 memories. FIFO.")]
     public Task ExecuteAsync(
         [Description("The memory to store.")]
         string text,

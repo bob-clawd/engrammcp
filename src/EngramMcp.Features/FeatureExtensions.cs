@@ -20,7 +20,7 @@ public static class FeatureExtensions
             foreach (var block in document.Memories.OrderBy(kvp => kvp.Key))
             {
                 sb.AppendLine().AppendLine($"## {block.Key}");
-            
+
                 foreach(var memory in block.Value)
                     sb.AppendLine($"- {memory.Text}");
             }
@@ -28,19 +28,19 @@ public static class FeatureExtensions
             return sb.ToString();
         }
     }
-    
+
     public static IEnumerable<Type> GetImplementations<T>() => Assembly.GetExecutingAssembly()
         .GetTypes()
         .Where(type => type.Implements<T>())
         .Distinct();
-    
+
     extension(IServiceCollection services)
     {
         public IServiceCollection AddImplementations<T>()
         {
             foreach (var type in GetImplementations<T>())
                 services.AddSingleton(type);
-        
+
             return services;
         }
     }
