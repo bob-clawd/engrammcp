@@ -10,9 +10,9 @@ public sealed class StoreShortTermTool(IMemoryService memoryService) : StoreMemo
     private const string TargetMemoryName = "short-term";
 
     [McpServerTool(Name = "store_shortterm", Title = "Store Short-Term Memory")]
-    [Description("Stores a plain-text memory in the short-term memory section.")]
+    [Description("Use this tool when you finish work for the human and want to record the recent working state for fast next-session resume, including completed tasks, milestones, touched files, and the active area of the workspace.")]
     public Task ExecuteAsync(
-        [Description("Plain-text memory content to store.")]
+        [Description("The memory to store.")]
         string text,
         CancellationToken cancellationToken)
     {

@@ -10,9 +10,9 @@ public sealed class StoreMediumTermTool(IMemoryService memoryService) : StoreMem
     private const string TargetMemoryName = "medium-term";
 
     [McpServerTool(Name = "store_mediumterm", Title = "Store Medium-Term Memory")]
-    [Description("Stores a plain-text memory in the medium-term memory section.")]
+    [Description("Use this tool when you learn something that will likely be useful in future tasks or conversations but may change over time, and is therefore worth keeping beyond the current session without treating it as permanent.")]
     public Task ExecuteAsync(
-        [Description("Plain-text memory content to store.")]
+        [Description("The memory to store.")]
         string text,
         CancellationToken cancellationToken)
     {
