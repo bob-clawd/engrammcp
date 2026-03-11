@@ -7,7 +7,7 @@ namespace EngramMcp.Features.Tools;
 public sealed class RecallTool(IMemoryService memoryService) : Tool
 {
     [McpServerTool(Name = "recall", Title = "Recall Memories", ReadOnly = true, Idempotent = true)]
-    [Description("Use this tool immediately at the start of every session, as soon as you can, to load previously stored memory before doing any other meaningful work.")]
+    [Description("Call this tool at the very start of every session, before planning, answering, or coding, to load remembered context.")]
     public async Task<string> ExecuteAsync(CancellationToken cancellationToken)
     {
         var document = await memoryService.RecallAsync(cancellationToken).ConfigureAwait(false);

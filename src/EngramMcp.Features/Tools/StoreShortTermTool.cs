@@ -9,7 +9,7 @@ public sealed class StoreShortTermTool(IMemoryService memoryService) : Tool
     private const string MemoryName = "short-term";
 
     [McpServerTool(Name = "store_shortterm", Title = "Store Short-Term Memory")]
-    [Description("Use this tool when you finish work for the human and want to record the recent working state for fast next-session resume, including completed tasks, milestones, touched files, and the active area of the workspace.")]
+    [Description("Use this tool for the recent working state you want available next session - such as completed tasks, milestones, touched files, and the active workspace area.")]
     public Task ExecuteAsync(
         [Description("The memory to store.")]
         string text,

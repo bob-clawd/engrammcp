@@ -13,6 +13,10 @@ public static class FeatureExtensions
         {
             var sb = new StringBuilder("# Memory").AppendLine();
 
+            sb.AppendLine("Memorize what is genuinely useful for you.");
+            sb.AppendLine("Learn naturally — you're helping a person, not building a dossier.");
+            sb.AppendLine("Store them immediately instead of relying on chat context.");
+
             foreach (var block in document.Memories.OrderBy(kvp => kvp.Key))
             {
                 sb.AppendLine().AppendLine($"## {block.Key}");

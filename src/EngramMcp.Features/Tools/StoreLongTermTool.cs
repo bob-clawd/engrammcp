@@ -9,7 +9,7 @@ public sealed class StoreLongTermTool(IMemoryService memoryService) : Tool
     private const string MemoryName = "long-term";
 
     [McpServerTool(Name = "store_longterm", Title = "Store Long-Term Memory")]
-    [Description("Use this tool when you learn a stable personal fact about the human or yourself - such as name, preferred language, vibe, preferences, or interaction style - that is unlikely to change and worth remembering forever.")]
+    [Description("Use this tool for stable, remember-worthy facts about the human or yourself - such as identity, preferences, or interaction style - that should persist indefinitely.")]
     public Task ExecuteAsync(
         [Description("The memory to store.")]
         string text,

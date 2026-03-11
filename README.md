@@ -62,28 +62,28 @@ These tool descriptions are written as routing triggers. Use them to help an age
 
 ### `recall`
 
-Use this tool immediately at the start of every session, as soon as you can, to load previously stored memory before doing any other meaningful work.
+Call this tool at the very start of every session, before planning, answering, or coding, to load remembered context.
 
 Parameters:
 - none
 
 ### `store_longterm`
 
-Use this tool when you learn a stable personal fact about the human or yourself - such as name, preferred language, vibe, preferences, or interaction style - that is unlikely to change and worth remembering forever.
+Use this tool for stable, remember-worthy facts about the human or yourself - such as identity, preferences, or interaction style - that should persist indefinitely. Store them immediately instead of relying on chat context.
 
 Parameters:
 - `text` (required): The memory to store.
 
 ### `store_mediumterm`
 
-Use this tool when you learn something that will likely be useful in future tasks or conversations but may change over time, and is therefore worth keeping beyond the current session without treating it as permanent.
+Use this tool for remember-worthy context that will likely help in future tasks or conversations but may change over time. Store it immediately instead of relying on chat context.
 
 Parameters:
 - `text` (required): The memory to store.
 
 ### `store_shortterm`
 
-Use this tool when you finish work for the human and want to record the recent working state for fast next-session resume, including completed tasks, milestones, touched files, and the active area of the workspace.
+Use this tool for the recent working state you want available next session - such as completed tasks, milestones, touched files, and the active workspace area. Store it immediately instead of relying on chat context.
 
 Parameters:
 - `text` (required): The memory to store.
