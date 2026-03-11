@@ -64,9 +64,7 @@ public sealed class JsonMemoryFileStore : IMemoryFileStore
         try
         {
             if (!string.IsNullOrEmpty(directoryPath))
-            {
                 Directory.CreateDirectory(directoryPath);
-            }
 
             if (!File.Exists(_filePath))
             {
@@ -74,13 +72,7 @@ public sealed class JsonMemoryFileStore : IMemoryFileStore
                 return;
             }
 
-            await using var stream = new FileStream(
-                _filePath,
-                FileMode.Open,
-                FileAccess.ReadWrite,
-                FileShare.None,
-                bufferSize: 4096,
-                useAsync: true);
+            await using var stream = new FileStream(_filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, bufferSize: 4096, useAsync: true);
         }
         catch (UnauthorizedAccessException exception)
         {

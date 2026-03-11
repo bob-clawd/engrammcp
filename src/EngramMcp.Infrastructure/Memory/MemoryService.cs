@@ -15,26 +15,22 @@ public sealed class MemoryService(IMemoryCatalog memoryCatalog, IMemoryFileStore
 
         var memory = memoryCatalog.GetByName(memoryName);
 
-        await fileStore.UpdateAsync(
-            document => memory.Store(document, new MemoryEntry(CreateTimestamp(), text)),
-            cancellationToken).ConfigureAwait(false);
+        await fileStore
+            .UpdateAsync(document => memory.Store(document, new MemoryEntry(CreateTimestamp(), text)), cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public async Task<MemoryDocument> RecallAsync(CancellationToken cancellationToken = default)
     {
         var document = await fileStore.LoadAsync(cancellationToken).ConfigureAwait(false);
+        
         var recalled = new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal);
 
         foreach (var memory in memoryCatalog.Memories)
-        {
             recalled[memory.Name] = [.. memory.Read(document)];
-        }
 
         return new MemoryDocument { Memories = recalled };
     }
 
-    private static DateTime CreateTimestamp()
-    {
-        return DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
-    }
+    private static DateTime CreateTimestamp() => DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Local);
 }
