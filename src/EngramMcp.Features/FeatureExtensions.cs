@@ -15,7 +15,7 @@ public static class FeatureExtensions
 
             sb.AppendLine("Memorize what is genuinely useful for you.");
             sb.AppendLine("Learn naturally — you're helping a person, not building a dossier.");
-            sb.AppendLine("Store them immediately instead of relying on chat context.");
+            sb.AppendLine("Store them proactively and immediately.");
 
             foreach (var block in document.Memories.OrderBy(kvp => kvp.Key))
             {
