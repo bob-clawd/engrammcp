@@ -6,7 +6,9 @@ A Model Context Protocol (MCP) server for persistent agent memory.
 
 ## Get It as a .NET Tool
 
-[![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://dotnet.microsoft.com/)
+
+[![NuGet](https://img.shields.io/nuget/v/EngramMcp.svg)](https://www.nuget.org/packages/EngramMcp/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://www.nuget.org/packages/EngramMcp/)
 
 #### Installation
 
@@ -24,7 +26,7 @@ dotnet tool install -g EngramMcp
       "command": [
         "engrammcp",
         "--file",
-        "C:\\Users\\your-name\\.engram\\memory.json"
+        "/Users/your_name/.config/.engram/memory.json"
       ]
     }
   }
@@ -49,12 +51,12 @@ Most agent sessions are stateless by default. EngramMcp solves that by providing
 
 ## What You Can Use It For
 
-| Tool                    | Description                                                       |
-| ----------------------- | ----------------------------------------------------------------- |
-| **Recall**              | Load all stored memory at the start of a session                  |
-| **Store Long-Term**     | Save durable facts and preferences worth keeping indefinitely     |
-| **Store Medium-Term**   | Save useful context that may change over time                     |
-| **Store Short-Term**    | Save the recent working state for fast next-session continuation  |
+| Tool                  | Description                                                      |
+| --------------------- | ---------------------------------------------------------------- |
+| **Recall**            | Load all stored memory at the start of a session                 |
+| **Store Long-Term**   | Save durable facts and preferences worth keeping indefinitely    |
+| **Store Medium-Term** | Save useful context that may change over time                    |
+| **Store Short-Term**  | Save the recent working state for fast next-session continuation |
 
 ## Memory Model
 
