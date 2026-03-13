@@ -140,16 +140,17 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task StoreAsync_UsesSharedCustomBucketCapacity()
     {
+        var catalog = new CodeMemoryCatalog();
         var memoryStore = new InMemoryStore(CreateContainer());
-        var service = new MemoryService(new CodeMemoryCatalog(), memoryStore);
+        var service = new MemoryService(catalog, memoryStore);
 
-        foreach (var index in Enumerable.Range(1, 55))
+        foreach (var index in Enumerable.Range(1, 25))
             await service.StoreAsync("project-x", $"entry-{index}");
 
         var entries = memoryStore.Container.Memories["project-x"];
-        entries.Count.Is(50);
+        entries.Count.Is(catalog.GetByName("project-x").Capacity);
         entries[0].Text.Is("entry-6");
-        entries[^1].Text.Is("entry-55");
+        entries[^1].Text.Is("entry-25");
     }
 
     [Fact]
@@ -163,6 +164,10 @@ public sealed class MemoryServiceTests
             var catalog = new CodeMemoryCatalog();
             var memoryStore = new JsonMemoryStore(filePath, catalog);
             var service = new MemoryService(catalog, memoryStore);
+            const int operationCount = 10;
+            var shortTermExpectedCount = Math.Min(operationCount, catalog.GetByName(ShortTerm).Capacity);
+            var mediumTermExpectedCount = Math.Min(operationCount, catalog.GetByName(MediumTerm).Capacity);
+            var longTermExpectedCount = Math.Min(operationCount, catalog.GetByName(LongTerm).Capacity);
             var operations = Enumerable.Range(1, 10)
                 .SelectMany(index => new[]
                 {
@@ -176,15 +181,15 @@ public sealed class MemoryServiceTests
 
             var recalled = await service.RecallAsync();
 
-            recalled.Memories[ShortTerm].Count.Is(10);
-            recalled.Memories[MediumTerm].Count.Is(10);
-            recalled.Memories[LongTerm].Count.Is(10);
-            recalled.Memories[ShortTerm].Select(entry => entry.Text).OrderBy(text => text).ToArray()
-                .SequenceEqual(Enumerable.Range(1, 10).Select(index => $"short-{index}").OrderBy(text => text)).IsTrue();
+            recalled.Memories[ShortTerm].Count.Is(shortTermExpectedCount);
+            recalled.Memories[MediumTerm].Count.Is(mediumTermExpectedCount);
+            recalled.Memories[LongTerm].Count.Is(longTermExpectedCount);
+            recalled.Memories[ShortTerm].Select(entry => entry.Text).Distinct().Count().Is(shortTermExpectedCount);
+            recalled.Memories[ShortTerm].All(entry => entry.Text.StartsWith("short-", StringComparison.Ordinal)).IsTrue();
             recalled.Memories[MediumTerm].Select(entry => entry.Text).OrderBy(text => text).ToArray()
-                .SequenceEqual(Enumerable.Range(1, 10).Select(index => $"medium-{index}").OrderBy(text => text)).IsTrue();
+                .SequenceEqual(Enumerable.Range(1, mediumTermExpectedCount).Select(index => $"medium-{index}").OrderBy(text => text)).IsTrue();
             recalled.Memories[LongTerm].Select(entry => entry.Text).OrderBy(text => text).ToArray()
-                .SequenceEqual(Enumerable.Range(1, 10).Select(index => $"long-{index}").OrderBy(text => text)).IsTrue();
+                .SequenceEqual(Enumerable.Range(1, longTermExpectedCount).Select(index => $"long-{index}").OrderBy(text => text)).IsTrue();
         }
         finally
         {

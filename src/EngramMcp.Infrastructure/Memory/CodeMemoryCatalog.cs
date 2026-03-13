@@ -6,17 +6,17 @@ namespace EngramMcp.Infrastructure.Memory;
 
 public sealed class CodeMemoryCatalog : IMemoryCatalog
 {
-    private const int CustomMemoryCapacity = 50;
+    private const int CustomMemoryCapacity = 20;
 
     private readonly IReadOnlyDictionary<string, MemorySection> _fixedMemories;
 
     public IReadOnlyList<MemorySection> Memories { get; } =
     [
-        new(LongTerm, 40),
-        new(MediumTerm, 20),
-        new(ShortTerm, 10),
+        new(LongTerm, 20),
+        new(MediumTerm, 10),
+        new(ShortTerm, 5),
     ];
-    
+
     public CodeMemoryCatalog()
     {
         _fixedMemories = Memories.ToDictionary(memory => memory.Name, StringComparer.OrdinalIgnoreCase);

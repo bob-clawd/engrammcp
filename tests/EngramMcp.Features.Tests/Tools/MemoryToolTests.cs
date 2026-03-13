@@ -9,6 +9,8 @@ namespace EngramMcp.Features.Tests.Tools;
 
 public sealed class MemoryToolTests
 {
+    private static readonly string NewLine = Environment.NewLine;
+
     [Fact]
     public async Task StoreShortTermTool_DelegatesToSharedServiceWithShortTermName()
     {
@@ -140,17 +142,17 @@ public sealed class MemoryToolTests
         var result = await tool.ExecuteAsync(CancellationToken.None);
 
         result.Is(
-            "# Memory\r\n" +
-            $"## {LongTerm}\r\n" +
-            "\r\n" +
-            $"## {MediumTerm}\r\n" +
-            "\r\n" +
-            $"## {ShortTerm}\r\n" +
-            "\r\n" +
-            "## Custom Sections\r\n" +
-            "- project-large (4)\r\n" +
-            "- project-medium (2)\r\n" +
-            "- project-small (1)\r\n");
+            $"# Memory{NewLine}" +
+            $"## {LongTerm}{NewLine}" +
+            NewLine +
+            $"## {MediumTerm}{NewLine}" +
+            NewLine +
+            $"## {ShortTerm}{NewLine}" +
+            NewLine +
+            $"## Custom Sections{NewLine}" +
+            $"- project-large (4){NewLine}" +
+            $"- project-medium (2){NewLine}" +
+            $"- project-small (1){NewLine}");
     }
 
     [Fact]
@@ -171,7 +173,7 @@ public sealed class MemoryToolTests
         var result = await tool.ExecuteAsync(ShortTerm, CancellationToken.None);
 
         service.ReadSection.Is(ShortTerm);
-        result.Is($"# Memory\r\n## {ShortTerm}\r\n- short [tags: ops, todo]\r\n");
+        result.Is($"# Memory{NewLine}## {ShortTerm}{NewLine}- short [tags: ops, todo]{NewLine}");
     }
 
     [Fact]
@@ -192,7 +194,7 @@ public sealed class MemoryToolTests
         var result = await tool.ExecuteAsync("project-x", CancellationToken.None);
 
         service.ReadSection.Is("project-x");
-        result.Is("# Memory\r\n## project-x\r\n- custom\r\n");
+        result.Is($"# Memory{NewLine}## project-x{NewLine}- custom{NewLine}");
     }
 
     [Fact]
@@ -238,7 +240,7 @@ public sealed class MemoryToolTests
     }
 
     [Fact]
-    public async Task SearchMemoriesTool_ReturnsHumanReadableResultsWithSectionContext()
+    public async Task SearchTool_ReturnsHumanReadableResultsWithSectionContext()
     {
         var service = new SpyMemoryService
         {
@@ -249,29 +251,29 @@ public sealed class MemoryToolTests
                     new MemoryEntry(new DateTime(2026, 3, 11, 12, 0, 0, DateTimeKind.Utc), "docker reminder", ["ops"], MemoryImportance.High))
             ]
         };
-        var tool = new SearchMemoriesTool(service);
+        var tool = new SearchTool(service);
 
         var result = await tool.ExecuteAsync("docker", CancellationToken.None);
 
         service.SearchQuery.Is("docker");
         result.Is(
-            "# Memory Search Results\r\n" +
-            "- docker reminder (`project-x`) [tags: ops]\r\n");
+            $"# Memory Search Results{NewLine}" +
+            $"- docker reminder (`project-x`) [tags: ops]{NewLine}");
     }
 
     [Fact]
-    public async Task SearchMemoriesTool_ReturnsNoMatchesMessage()
+    public async Task SearchTool_ReturnsNoMatchesMessage()
     {
         var service = new SpyMemoryService();
-        var tool = new SearchMemoriesTool(service);
+        var tool = new SearchTool(service);
 
         var result = await tool.ExecuteAsync("missing", CancellationToken.None);
 
-        result.Is("# Memory Search Results\r\nNo matches found.\r\n");
+        result.Is($"# Memory Search Results{NewLine}No matches found.{NewLine}");
     }
 
     [Fact]
-    public async Task SearchMemoriesTool_EmitsOneLinePerResultWithoutTextFlatteningLogic()
+    public async Task SearchTool_EmitsOneLinePerResultWithoutTextFlatteningLogic()
     {
         var service = new SpyMemoryService
         {
@@ -285,24 +287,24 @@ public sealed class MemoryToolTests
                     new MemoryEntry(new DateTime(2026, 3, 11, 13, 0, 0, DateTimeKind.Utc), "workspace note", ["dev"], MemoryImportance.Normal))
             ]
         };
-        var tool = new SearchMemoriesTool(service);
+        var tool = new SearchTool(service);
 
         var result = await tool.ExecuteAsync("docker", CancellationToken.None);
 
         result.Is(
-            "# Memory Search Results\r\n" +
-            "- docker reminder (`project-x`) [tags: ops]\r\n" +
-            "- workspace note (`project-y`) [tags: dev]\r\n");
+            $"# Memory Search Results{NewLine}" +
+            $"- docker reminder (`project-x`) [tags: ops]{NewLine}" +
+            $"- workspace note (`project-y`) [tags: dev]{NewLine}");
     }
 
     [Fact]
-    public async Task SearchMemoriesTool_PropagatesInvalidQueryFailure()
+    public async Task SearchTool_PropagatesInvalidQueryFailure()
     {
         var service = new SpyMemoryService
         {
             SearchException = new ArgumentException("Search query must not be null, empty, or whitespace.", "query")
         };
-        var tool = new SearchMemoriesTool(service);
+        var tool = new SearchTool(service);
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() => tool.ExecuteAsync("   ", CancellationToken.None));
 
@@ -328,7 +330,7 @@ public sealed class MemoryToolTests
 
         var result = await tool.ExecuteAsync(CancellationToken.None);
 
-        result.Is($"# Memory\r\n## {LongTerm}\r\n\r\n## {MediumTerm}\r\n\r\n## {ShortTerm}\r\n- short\r\n");
+        result.Is($"# Memory{NewLine}## {LongTerm}{NewLine}{NewLine}## {MediumTerm}{NewLine}{NewLine}## {ShortTerm}{NewLine}- short{NewLine}");
     }
 
     private sealed class SpyMemoryService : IMemoryService

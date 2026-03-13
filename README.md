@@ -65,11 +65,11 @@ Most agent sessions are stateless by default. EngramMcp solves that by providing
 
 EngramMcp uses three built-in memory sections with code-defined capacities:
 
-- `long-term` - 40 entries
-- `medium-term` - 20 entries
-- `short-term` - 10 entries
+- `long-term` - 20 entries
+- `medium-term` - 10 entries
+- `short-term` - 5 entries
 
-In addition, agents can create custom sections through `store(section, text, tags?)`. Custom sections are created lazily on first write and currently use a shared default capacity of 50 entries.
+In addition, agents can create custom sections through `store(section, text, tags?)`. Custom sections are created lazily on first write and currently use a shared default capacity of 20 entries.
 
 Built-in sections appear first in `recall`. Custom sections are listed afterward as discoverable section names with entry counts, but their contents are not dumped into the default recall output.
 
@@ -78,7 +78,7 @@ When a section exceeds its capacity, the oldest entries are discarded.
 Each stored entry contains:
 
 - `timestamp` - local write timestamp
-- `text` - a required single-line memory text with a maximum length of 280 characters
+- `text` - a required single-line memory text with a maximum length of 500 characters
 - `tags` - optional normalized tags used for later search and filtering
 - `importance` - optional importance level: `low`, `normal`, or `high`
 
@@ -130,8 +130,8 @@ Example file shape:
 
 - `recall` is the curated overview for the built-in sections plus custom-section discovery
 - `read_section(section)` reads one exact section when you already know its name; section lookup is case-insensitive and trims surrounding whitespace
-- `search_memories(query)` searches across section names, tags, and entry text using case-insensitive substring matching
+- `search(query)` searches across section names, tags, and entry text using case-insensitive substring matching
 
-`search_memories` returns individual matching entries, sorted by `importance` descending and then `timestamp` descending.
+`search` returns individual matching entries, sorted by `importance` descending and then `timestamp` descending.
 
 All write tools support optional `tags`, including `store(section, text, tags?)` and the built-in section writers.
