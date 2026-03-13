@@ -35,6 +35,28 @@ public static class FeatureExtensions
         }
     }
 
+    extension(IReadOnlyList<MemorySearchResult> results)
+    {
+        internal string ToMarkdown()
+        {
+            var sb = new StringBuilder("# Memory Search Results");
+
+            if (results.Count == 0)
+                return sb.AppendLine().AppendLine("No matches found.").ToString();
+
+            sb.AppendLine();
+
+            foreach (var result in results)
+                sb.Append("- ")
+                    .Append(result.Entry.Text)
+                    .Append(" (`")
+                    .Append(result.Section)
+                    .AppendLine("`)");
+
+            return sb.ToString();
+        }
+    }
+
     public static IEnumerable<Type> GetImplementations<T>() => Assembly.GetExecutingAssembly()
         .GetTypes()
         .Where(type => type.Implements<T>())
