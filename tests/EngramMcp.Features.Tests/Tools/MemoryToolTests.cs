@@ -15,7 +15,7 @@ public sealed class MemoryToolTests
         var service = new SpyMemoryService();
         var tool = new StoreShortTermTool(service);
 
-        await tool.ExecuteAsync("remember this", CancellationToken.None);
+        await tool.ExecuteAsync("remember this", cancellationToken: CancellationToken.None);
 
         service.StoredName.Is(ShortTerm);
         service.StoredText.Is("remember this");
@@ -27,7 +27,7 @@ public sealed class MemoryToolTests
         var service = new SpyMemoryService();
         var tool = new StoreMediumTermTool(service);
 
-        await tool.ExecuteAsync("remember this", CancellationToken.None);
+        await tool.ExecuteAsync("remember this", cancellationToken: CancellationToken.None);
 
         service.StoredName.Is(MediumTerm);
     }
@@ -38,30 +38,31 @@ public sealed class MemoryToolTests
         var service = new SpyMemoryService();
         var tool = new StoreLongTermTool(service);
 
-        await tool.ExecuteAsync("remember this", CancellationToken.None);
+        await tool.ExecuteAsync("remember this", cancellationToken: CancellationToken.None);
 
         service.StoredName.Is(LongTerm);
     }
 
     [Fact]
-    public async Task StoreMemoryTool_DelegatesToSharedServiceWithProvidedBucket()
+    public async Task StoreTool_DelegatesToSharedServiceWithProvidedSectionAndTags()
     {
         var service = new SpyMemoryService();
-        var tool = new StoreMemoryTool(service);
+        var tool = new StoreTool(service);
 
-        await tool.ExecuteAsync("project-x", "remember this", CancellationToken.None);
+        await tool.ExecuteAsync("project-x", "remember this", ["Docker", "ops", "docker", "   "], CancellationToken.None);
 
         service.StoredName.Is("project-x");
         service.StoredText.Is("remember this");
+        service.StoredTags!.SequenceEqual(["Docker", "ops", "docker", "   "]).IsTrue();
     }
 
     [Fact]
-    public async Task StoreMemoryTool_AllowsBuiltInBucketNames()
+    public async Task StoreTool_AllowsBuiltInSectionNames()
     {
         var service = new SpyMemoryService();
-        var tool = new StoreMemoryTool(service);
+        var tool = new StoreTool(service);
 
-        await tool.ExecuteAsync(LongTerm, "remember this", CancellationToken.None);
+        await tool.ExecuteAsync(LongTerm, "remember this", cancellationToken: CancellationToken.None);
 
         service.StoredName.Is(LongTerm);
     }
@@ -153,7 +154,7 @@ public sealed class MemoryToolTests
     }
 
     [Fact]
-    public async Task ReadMemoryTool_ReturnsMarkdownForBuiltInSectionOnly()
+    public async Task ReadSectionTool_ReturnsMarkdownForBuiltInSectionOnly()
     {
         var service = new SpyMemoryService
         {
@@ -161,20 +162,20 @@ public sealed class MemoryToolTests
             {
                 Memories = new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal)
                 {
-                    [ShortTerm] = [new MemoryEntry(new DateTime(2026, 3, 11, 12, 0, 0), "short")]
+                    [ShortTerm] = [new MemoryEntry(new DateTime(2026, 3, 11, 12, 0, 0), "short", ["ops", "todo"])]
                 }
             }
         };
-        var tool = new ReadMemoryTool(service);
+        var tool = new ReadSectionTool(service);
 
         var result = await tool.ExecuteAsync(ShortTerm, CancellationToken.None);
 
         service.ReadSection.Is(ShortTerm);
-        result.Is($"# Memory\r\n## {ShortTerm}\r\n- short\r\n");
+        result.Is($"# Memory\r\n## {ShortTerm}\r\n- short [tags: ops, todo]\r\n");
     }
 
     [Fact]
-    public async Task ReadMemoryTool_ReturnsMarkdownForCustomSectionOnly()
+    public async Task ReadSectionTool_ReturnsMarkdownForCustomSectionOnly()
     {
         var service = new SpyMemoryService
         {
@@ -186,7 +187,7 @@ public sealed class MemoryToolTests
                 }
             }
         };
-        var tool = new ReadMemoryTool(service);
+        var tool = new ReadSectionTool(service);
 
         var result = await tool.ExecuteAsync("project-x", CancellationToken.None);
 
@@ -195,17 +196,45 @@ public sealed class MemoryToolTests
     }
 
     [Fact]
-    public async Task ReadMemoryTool_PropagatesMissingSectionFailure()
+    public async Task ReadSectionTool_ReturnsHumanReadableMissingSectionFailure()
     {
         var service = new SpyMemoryService
         {
             ReadException = new KeyNotFoundException($"Memory section 'project-x' was not found. Available sections: {LongTerm}, {MediumTerm}, {ShortTerm}, project-a.")
         };
-        var tool = new ReadMemoryTool(service);
+        var tool = new ReadSectionTool(service);
 
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => tool.ExecuteAsync("project-x", CancellationToken.None));
+        var result = await tool.ExecuteAsync("project-x", CancellationToken.None);
 
-        exception.Message.Is($"Memory section 'project-x' was not found. Available sections: {LongTerm}, {MediumTerm}, {ShortTerm}, project-a.");
+        result.Is($"# Memory Section Error\r\nSection not found. Memory section 'project-x' was not found. Available sections: {LongTerm}, {MediumTerm}, {ShortTerm}, project-a.\r\n");
+    }
+
+    [Fact]
+    public async Task ReadSectionTool_ReturnsHumanReadableInvalidSectionFailure()
+    {
+        var service = new SpyMemoryService
+        {
+            ReadException = new ArgumentException("Memory section identifier must not be null, empty, or whitespace.", "section")
+        };
+        var tool = new ReadSectionTool(service);
+
+        var result = await tool.ExecuteAsync("   ", CancellationToken.None);
+
+        result.Is("# Memory Section Error\r\nInvalid section identifier. Provide a non-empty section name.\r\n");
+    }
+
+    [Fact]
+    public async Task ReadSectionTool_ReturnsHumanReadableInternalFailure()
+    {
+        var service = new SpyMemoryService
+        {
+            ReadException = new InvalidOperationException("disk unavailable")
+        };
+        var tool = new ReadSectionTool(service);
+
+        var result = await tool.ExecuteAsync("project-x", CancellationToken.None);
+
+        result.Is("# Memory Section Error\r\nInternal failure. Unable to read the requested memory section right now.\r\n");
     }
 
     [Fact]
@@ -227,7 +256,7 @@ public sealed class MemoryToolTests
         service.SearchQuery.Is("docker");
         result.Is(
             "# Memory Search Results\r\n" +
-            "- docker reminder (`project-x`)\r\n");
+            "- docker reminder (`project-x`) [tags: ops]\r\n");
     }
 
     [Fact]
@@ -262,8 +291,8 @@ public sealed class MemoryToolTests
 
         result.Is(
             "# Memory Search Results\r\n" +
-            "- docker reminder (`project-x`)\r\n" +
-            "- workspace note (`project-y`)\r\n");
+            "- docker reminder (`project-x`) [tags: ops]\r\n" +
+            "- workspace note (`project-y`) [tags: dev]\r\n");
     }
 
     [Fact]
@@ -308,6 +337,8 @@ public sealed class MemoryToolTests
 
         public string? StoredText { get; private set; }
 
+        public IReadOnlyList<string>? StoredTags { get; private set; }
+
         public string? ReadSection { get; private set; }
 
         public string? SearchQuery { get; private set; }
@@ -322,10 +353,11 @@ public sealed class MemoryToolTests
 
         public Exception? SearchException { get; init; }
 
-        public Task StoreAsync(string section, string text, CancellationToken cancellationToken = default)
+        public Task StoreAsync(string section, string text, IReadOnlyList<string>? tags = null, CancellationToken cancellationToken = default)
         {
             StoredName = section;
             StoredText = text;
+            StoredTags = tags;
             return Task.CompletedTask;
         }
 

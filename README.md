@@ -54,12 +54,12 @@ Most agent sessions are stateless by default. EngramMcp solves that by providing
 | Tool                  | Description                                                                        |
 | --------------------- | ---------------------------------------------------------------------------------- |
 | **Recall**            | Load the built-in memory overview and list available custom sections               |
-| **Read Memory**       | Read the contents of one specific memory section                                   |
+| **Read Section**      | Read the contents of one specific memory section                                   |
 | **Search Memories**   | Search individual memory entries across section names, tags, and text              |
 | **Store Long-Term**   | Save durable facts and preferences worth keeping indefinitely                      |
 | **Store Medium-Term** | Save useful context that may change over time                                      |
 | **Store Short-Term**  | Save the recent working state for fast next-session continuation                   |
-| **Store Memory**      | Save memory into any named section, including custom sections created on first use |
+| **Store**             | Save memory into any named section, including custom sections created on first use |
 
 ## Memory Model
 
@@ -69,7 +69,7 @@ EngramMcp uses three built-in memory sections with code-defined capacities:
 - `medium-term` - 20 entries
 - `short-term` - 10 entries
 
-In addition, agents can create custom sections through `store_memory(section, text)`. Custom sections are created lazily on first write and currently use a shared default capacity of 50 entries.
+In addition, agents can create custom sections through `store(section, text, tags?)`. Custom sections are created lazily on first write and currently use a shared default capacity of 50 entries.
 
 Built-in sections appear first in `recall`. Custom sections are listed afterward as discoverable section names with entry counts, but their contents are not dumped into the default recall output.
 
@@ -129,7 +129,9 @@ Example file shape:
 ## Retrieval Model
 
 - `recall` is the curated overview for the built-in sections plus custom-section discovery
-- `read_memory(section)` reads one exact section when you already know its name
+- `read_section(section)` reads one exact section when you already know its name; section lookup is case-insensitive and trims surrounding whitespace
 - `search_memories(query)` searches across section names, tags, and entry text using case-insensitive substring matching
 
 `search_memories` returns individual matching entries, sorted by `importance` descending and then `timestamp` descending.
+
+All write tools support optional `tags`, including `store(section, text, tags?)` and the built-in section writers.

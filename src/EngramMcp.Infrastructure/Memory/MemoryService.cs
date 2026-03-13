@@ -6,29 +6,31 @@ namespace EngramMcp.Infrastructure.Memory;
 public sealed class MemoryService(IMemoryCatalog memoryCatalog, IMemoryStore memoryStore)
     : IMemoryService
 {
-    public async Task StoreAsync(string section, string text, CancellationToken cancellationToken = default)
+    public Task StoreAsync(string section, string text, IReadOnlyList<string>? tags = null, CancellationToken cancellationToken = default)
     {
-        var memory = memoryCatalog.GetByName(section);
+        var normalizedSection = NormalizeSectionIdentifier(section);
 
-        await memoryStore
-            .UpdateAsync(container => memory.Store(container, new MemoryEntry(CreateTimestamp(), text)), cancellationToken)
-            .ConfigureAwait(false);
+        return memoryStore.UpdateAsync(
+            container =>
+            {
+                var resolvedSection = ResolveSectionName(normalizedSection, container);
+                var memory = memoryCatalog.GetByName(resolvedSection);
+                memory.Store(container, new MemoryEntry(CreateTimestamp(), text, tags));
+            },
+            cancellationToken);
     }
 
     public async Task<MemoryContainer> ReadAsync(string section, CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(section);
+        var normalizedSection = NormalizeSectionIdentifier(section);
 
         var container = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
-        var fixedMemory = memoryCatalog.Memories.FirstOrDefault(memory => string.Equals(memory.Name, section, StringComparison.Ordinal));
+        var resolvedSection = TryResolveExistingSectionName(normalizedSection, container);
 
-        if (fixedMemory is not null)
-            return CreateSectionDocument(section, container.Memories.TryGetValue(section, out var entries) ? entries : []);
+        if (resolvedSection is not null)
+            return CreateSectionDocument(resolvedSection, container.Memories.TryGetValue(resolvedSection, out var entries) ? entries : []);
 
-        if (container.Memories.TryGetValue(section, out var customEntries))
-            return CreateSectionDocument(section, customEntries);
-
-        throw new KeyNotFoundException($"Memory section '{section}' was not found. Available sections: {GetAvailableSectionNames(container)}.");
+        throw new KeyNotFoundException($"Memory section '{normalizedSection}' was not found. Available sections: {GetAvailableSectionNames(container)}.");
     }
 
     public async Task<MemoryContainer> RecallAsync(CancellationToken cancellationToken = default)
@@ -84,8 +86,8 @@ public sealed class MemoryService(IMemoryCatalog memoryCatalog, IMemoryStore mem
     {
         var builtInNames = memoryCatalog.Memories.Select(memory => memory.Name);
         var customNames = container.Memories.Keys
-            .Except(memoryCatalog.Memories.Select(memory => memory.Name), StringComparer.Ordinal)
-            .OrderBy(name => name, StringComparer.Ordinal);
+            .Except(memoryCatalog.Memories.Select(memory => memory.Name), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase);
 
         return string.Join(", ", builtInNames.Concat(customNames));
     }
@@ -94,7 +96,7 @@ public sealed class MemoryService(IMemoryCatalog memoryCatalog, IMemoryStore mem
     {
         var builtInNames = memoryCatalog.Memories
             .Select(memory => memory.Name)
-            .ToHashSet(StringComparer.Ordinal);
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return container.Memories
             .Where(pair => !builtInNames.Contains(pair.Key))
@@ -102,6 +104,49 @@ public sealed class MemoryService(IMemoryCatalog memoryCatalog, IMemoryStore mem
             .OrderByDescending(summary => summary.EntryCount)
             .ThenBy(summary => summary.Name, StringComparer.Ordinal)
             .ToList();
+    }
+
+    private string ResolveSectionName(string requestedSection, MemoryContainer container)
+    {
+        var fixedMemory = memoryCatalog.GetByName(requestedSection);
+
+        if (memoryCatalog.Memories.Any(memory => string.Equals(memory.Name, requestedSection, StringComparison.OrdinalIgnoreCase)))
+            return fixedMemory.Name;
+
+        return FindExistingCustomSectionName(requestedSection, container) ?? requestedSection;
+    }
+
+    private string? TryResolveExistingSectionName(string requestedSection, MemoryContainer container)
+    {
+        var fixedMemory = memoryCatalog.Memories.FirstOrDefault(memory => string.Equals(memory.Name, requestedSection, StringComparison.OrdinalIgnoreCase));
+
+        if (fixedMemory is not null)
+            return fixedMemory.Name;
+
+        return FindExistingCustomSectionName(requestedSection, container);
+    }
+
+    private static string NormalizeSectionIdentifier(string? section)
+    {
+        if (string.IsNullOrWhiteSpace(section))
+            throw new ArgumentException("Memory section identifier must not be null, empty, or whitespace.", nameof(section));
+
+        return section.Trim();
+    }
+
+    private static string? FindExistingCustomSectionName(string requestedSection, MemoryContainer container)
+    {
+        var matches = container.Memories.Keys
+            .Where(name => string.Equals(name, requestedSection, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        return matches.Length switch
+        {
+            0 => null,
+            1 => matches[0],
+            _ => throw new InvalidOperationException($"Memory store contains multiple sections that differ only by casing for '{requestedSection}'.")
+        };
     }
 
     private static DateTime CreateTimestamp() => DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Local);

@@ -74,6 +74,17 @@ public sealed class MemoryServiceTests
     }
 
     [Fact]
+    public async Task StoreAsync_PersistsNormalizedTags()
+    {
+        var memoryStore = new InMemoryStore(CreateContainer());
+        var service = new MemoryService(new CodeMemoryCatalog(), memoryStore);
+
+        await service.StoreAsync(ShortTerm, "tagged", ["Docker", "ops", "docker", "   "]);
+
+        memoryStore.Container.Memories[ShortTerm][0].Tags.SequenceEqual(["docker", "ops"]).IsTrue();
+    }
+
+    [Fact]
     public async Task StoreAsync_AllowsDuplicates_AndUsesTargetMemoryOnly()
     {
         var memoryStore = new InMemoryStore(CreateContainer(new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal)
@@ -106,6 +117,24 @@ public sealed class MemoryServiceTests
 
         memoryStore.Container.Memories.ContainsKey("project-x").IsTrue();
         memoryStore.Container.Memories["project-x"].Select(entry => entry.Text).ToArray().SequenceEqual(["custom"]).IsTrue();
+    }
+
+    [Fact]
+    public async Task StoreAsync_ReusesExistingCustomSectionCaseInsensitively()
+    {
+        var memoryStore = new InMemoryStore(CreateContainer(new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal)
+        {
+            [ShortTerm] = [],
+            [MediumTerm] = [],
+            [LongTerm] = [],
+            ["project-x"] = [new(new DateTime(2026, 3, 11, 10, 0, 0), "existing")]
+        }));
+        var service = new MemoryService(new CodeMemoryCatalog(), memoryStore);
+
+        await service.StoreAsync("PROJECT-X", "custom");
+
+        memoryStore.Container.Memories.ContainsKey("PROJECT-X").IsFalse();
+        memoryStore.Container.Memories["project-x"].Select(entry => entry.Text).ToArray().SequenceEqual(["existing", "custom"]).IsTrue();
     }
 
     [Fact]
@@ -194,6 +223,39 @@ public sealed class MemoryServiceTests
         })));
 
         var result = await service.ReadAsync("project-x");
+
+        result.Memories.Keys.ToArray().SequenceEqual(["project-x"]).IsTrue();
+        result.Memories["project-x"].Select(entry => entry.Text).ToArray().SequenceEqual(["custom"]).IsTrue();
+    }
+
+    [Fact]
+    public async Task ReadAsync_NormalizesBuiltInSectionLookupCaseInsensitively()
+    {
+        var service = new MemoryService(new CodeMemoryCatalog(), new InMemoryStore(CreateContainer(new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal)
+        {
+            [ShortTerm] = [new(new DateTime(2026, 3, 11, 10, 0, 0), "short")],
+            [MediumTerm] = [],
+            [LongTerm] = []
+        })));
+
+        var result = await service.ReadAsync(" SHORT-TERM ");
+
+        result.Memories.Keys.ToArray().SequenceEqual([ShortTerm]).IsTrue();
+        result.Memories[ShortTerm].Select(entry => entry.Text).ToArray().SequenceEqual(["short"]).IsTrue();
+    }
+
+    [Fact]
+    public async Task ReadAsync_NormalizesCustomSectionLookupCaseInsensitively()
+    {
+        var service = new MemoryService(new CodeMemoryCatalog(), new InMemoryStore(CreateContainer(new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal)
+        {
+            [ShortTerm] = [],
+            [MediumTerm] = [],
+            [LongTerm] = [],
+            ["project-x"] = [new(new DateTime(2026, 3, 11, 12, 0, 0), "custom")]
+        })));
+
+        var result = await service.ReadAsync(" PROJECT-X ");
 
         result.Memories.Keys.ToArray().SequenceEqual(["project-x"]).IsTrue();
         result.Memories["project-x"].Select(entry => entry.Text).ToArray().SequenceEqual(["custom"]).IsTrue();

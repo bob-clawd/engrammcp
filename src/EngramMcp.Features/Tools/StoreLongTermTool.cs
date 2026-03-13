@@ -12,8 +12,10 @@ public sealed class StoreLongTermTool(IMemoryService memoryService) : Tool
     public Task ExecuteAsync(
         [Description("The memory to store.")]
         string text,
-        CancellationToken cancellationToken)
+        [Description("Optional normalized tags to store with this memory entry.")]
+        IReadOnlyList<string>? tags = null,
+        CancellationToken cancellationToken = default)
     {
-        return memoryService.StoreAsync(BuiltInMemorySections.LongTerm, text, cancellationToken);
+        return memoryService.StoreAsync(BuiltInMemorySections.LongTerm, text, tags, cancellationToken);
     }
 }

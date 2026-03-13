@@ -12,6 +12,6 @@ public sealed class RecallTool(IMemoryService memoryService) : Tool
     {
         var document = await memoryService.RecallAsync(cancellationToken).ConfigureAwait(false);
 
-        return document.ToMarkdown();
+        return document.ToRecallMarkdown();
     }
 }

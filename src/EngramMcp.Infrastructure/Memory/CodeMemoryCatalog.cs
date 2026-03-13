@@ -19,7 +19,7 @@ public sealed class CodeMemoryCatalog : IMemoryCatalog
     
     public CodeMemoryCatalog()
     {
-        _fixedMemories = Memories.ToDictionary(memory => memory.Name, StringComparer.Ordinal);
+        _fixedMemories = Memories.ToDictionary(memory => memory.Name, StringComparer.OrdinalIgnoreCase);
     }
 
 

@@ -12,8 +12,10 @@ public sealed class StoreShortTermTool(IMemoryService memoryService) : Tool
     public Task ExecuteAsync(
         [Description("The memory to store.")]
         string text,
-        CancellationToken cancellationToken)
+        [Description("Optional normalized tags to store with this memory entry.")]
+        IReadOnlyList<string>? tags = null,
+        CancellationToken cancellationToken = default)
     {
-        return memoryService.StoreAsync(BuiltInMemorySections.ShortTerm, text, cancellationToken);
+        return memoryService.StoreAsync(BuiltInMemorySections.ShortTerm, text, tags, cancellationToken);
     }
 }

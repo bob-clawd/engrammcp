@@ -9,7 +9,7 @@ public static class FeatureExtensions
 {
     extension(MemoryContainer container)
     {
-        internal string ToMarkdown()
+        internal string ToRecallMarkdown()
         {
             var sb = new StringBuilder("# Memory");
 
@@ -33,6 +33,21 @@ public static class FeatureExtensions
 
             return sb.ToString();
         }
+
+        internal string ToSectionMarkdown()
+        {
+            var sb = new StringBuilder("# Memory");
+
+            foreach (var block in container.Memories)
+            {
+                sb.AppendLine().AppendLine($"## {block.Key}");
+
+                foreach (var memory in block.Value)
+                    sb.AppendLine(FormatMemoryLine(memory));
+            }
+
+            return sb.ToString();
+        }
     }
 
     extension(IReadOnlyList<MemorySearchResult> results)
@@ -51,10 +66,21 @@ public static class FeatureExtensions
                     .Append(result.Entry.Text)
                     .Append(" (`")
                     .Append(result.Section)
-                    .AppendLine("`)");
+                    .Append("`)")
+                    .AppendLine(FormatTagsSuffix(result.Entry.Tags));
 
             return sb.ToString();
         }
+    }
+
+    private static string FormatMemoryLine(MemoryEntry memory)
+    {
+        return $"- {memory.Text}{FormatTagsSuffix(memory.Tags)}";
+    }
+
+    private static string FormatTagsSuffix(IReadOnlyList<string> tags)
+    {
+        return tags.Count == 0 ? string.Empty : $" [tags: {string.Join(", ", tags)}]";
     }
 
     public static IEnumerable<Type> GetImplementations<T>() => Assembly.GetExecutingAssembly()
