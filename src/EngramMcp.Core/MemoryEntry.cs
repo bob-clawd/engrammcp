@@ -2,7 +2,7 @@ namespace EngramMcp.Core;
 
 public sealed record MemoryEntry
 {
-    private const int MaxTextLength = 280;
+    private const int MaxTextLength = 500;
 
     private string _text = null!;
 
