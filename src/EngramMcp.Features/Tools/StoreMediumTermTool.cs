@@ -9,7 +9,7 @@ public sealed class StoreMediumTermTool(IMemoryService memoryService) : Tool
     private const string MemoryName = "medium-term";
 
     [McpServerTool(Name = "store_mediumterm", Title = "Store Medium-Term Memory")]
-    [Description("Store this when you learn something about the user that would help in any future session: preferences, hobbies, working style, favorite tools, or anything personally meaningful. These facts may change over time.")]
+    [Description("Store information that is useful across sessions but may change over time. Use for evolving preferences, personal events, decisions made, lessons learned.")]
     public Task ExecuteAsync(
         [Description("The memory to store.")]
         string text,
