@@ -23,6 +23,21 @@ dotnet tool install -g EngramMcp
   "mcp": {
     "memory": {
       "type": "local",
+      "command": ["engrammcp"]
+    }
+  }
+}
+```
+
+By default, EngramMcp stores memory in `.engram/memory.json` under the current workspace directory.
+
+If you want the memory file somewhere else, you can still pass an explicit path:
+
+```json
+{
+  "mcp": {
+    "memory": {
+      "type": "local",
       "command": [
         "engrammcp",
         "--file",
@@ -33,7 +48,7 @@ dotnet tool install -g EngramMcp
 }
 ```
 
-Use an absolute file path so the memory location stays stable across launches.
+Use an absolute file path for `--file` when you want the memory location to stay stable across launches, even outside the workspace.
 
 ## What It Is
 

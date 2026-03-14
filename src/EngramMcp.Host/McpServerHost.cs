@@ -7,7 +7,7 @@ public static class McpServerHost
 {
     public static async Task RunAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        var options = ParseOptions(args);
+        var options = ParseOptions(args, Directory.GetCurrentDirectory());
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder(args);
         builder.Logging.ClearProviders();
         builder.Logging.AddSimpleConsole(consoleOptions =>
@@ -22,9 +22,10 @@ public static class McpServerHost
         await host.RunAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private static MemoryFileOptions ParseOptions(string[] args)
+    internal static MemoryFileOptions ParseOptions(string[] args, string startupDirectory)
     {
         ArgumentNullException.ThrowIfNull(args);
+        ArgumentException.ThrowIfNullOrWhiteSpace(startupDirectory);
 
         string? filePath = null;
 
@@ -47,8 +48,7 @@ public static class McpServerHost
                 throw new ArgumentException("The '--file' value must not be empty or whitespace.", nameof(args));
         }
 
-        if (filePath is null)
-            throw new ArgumentException("Missing required '--file <path>' argument.", nameof(args));
+        filePath ??= Path.Combine(startupDirectory, ".engram", "memory.json");
 
         return new MemoryFileOptions
         {
