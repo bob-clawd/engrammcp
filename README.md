@@ -31,23 +31,6 @@ dotnet tool install -g EngramMcp
 
 By default, EngramMcp stores memory in `.engram/memory.json` under the current workspace directory.
 
-If you want the memory file somewhere else, you can still pass an explicit path:
-
-```json
-{
-  "mcp": {
-    "memory": {
-      "type": "local",
-      "command": [
-        "engrammcp",
-        "--file",
-        "/Users/your_name/.config/.engram/memory.json"
-      ]
-    }
-  }
-}
-```
-
 Use an absolute file path for `--file` when you want the memory location to stay stable across launches, even outside the workspace.
 
 ## What It Is
@@ -150,3 +133,30 @@ Example file shape:
 `search` returns individual matching entries, sorted by `importance` descending and then `timestamp` descending.
 
 All write tools support optional `tags`, including `store(section, text, tags?)` and the built-in section writers.
+
+
+# System Prompt
+
+## Memory
+
+### Retrieval
+
+Prefer using existing memory over asking the user to repeat information.
+Check memory before answering questions about the user, preferences, prior work, or ongoing tasks.
+
+- memory_recall: Call at the start of each session.
+- memory_search: Use for keyword-based memory retrieval.
+- memory_read_section: Use for retrieving the full contents of a section.
+
+### Storage
+
+Store information when meaningful facts or checkpoints are learned, not after every message.
+
+Only store information that is likely to remain useful in future sessions.
+Store conclusions, not conversation.
+Avoid storing duplicate information.
+
+- memory_store_longterm: Use for personal facts about the user or your relationship that are unlikely to change (name, identity, values, personality, vibe).
+- memory_store_mediumterm: Use for personal and work-related information that may evolve over time (preferences, hobbies, working style, favorite tools, music taste).
+- memory_store_shortterm: Use for work-related context that helps resume progress in future sessions (completed tasks, checkpoints, important findings).
+- memory_store: Use for custom memory sections.
