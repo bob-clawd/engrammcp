@@ -18,7 +18,7 @@ public static class FeatureExtensions
                 sb.AppendLine().AppendLine($"## {block.Key}");
 
                 foreach (var memory in block.Value)
-                    sb.AppendLine($"- {memory.Text}");
+                    sb.AppendLine(FormatMemoryLine(memory));
             }
 
             if (container.CustomSections.Count > 0)
@@ -62,12 +62,7 @@ public static class FeatureExtensions
             sb.AppendLine();
 
             foreach (var result in results)
-                sb.Append("- ")
-                    .Append(result.Entry.Text)
-                    .Append(" (`")
-                    .Append(result.Section)
-                    .Append("`)")
-                    .AppendLine(FormatTagsSuffix(result.Entry.Tags));
+                sb.AppendLine(FormatSearchLine(result));
 
             return sb.ToString();
         }
@@ -75,7 +70,17 @@ public static class FeatureExtensions
 
     private static string FormatMemoryLine(MemoryEntry memory)
     {
-        return $"- {memory.Text}{FormatTagsSuffix(memory.Tags)}";
+        return $"- {memory.Text}{FormatImportanceSuffix(memory.Importance)}{FormatTagsSuffix(memory.Tags)}";
+    }
+
+    private static string FormatSearchLine(MemorySearchResult result)
+    {
+        return $"- {result.Entry.Text}{FormatImportanceSuffix(result.Entry.Importance)} (`{result.Section}`){FormatTagsSuffix(result.Entry.Tags)}";
+    }
+
+    private static string FormatImportanceSuffix(MemoryImportance importance)
+    {
+        return importance == MemoryImportance.High ? " - IMPORTANT!" : string.Empty;
     }
 
     private static string FormatTagsSuffix(IReadOnlyList<string> tags)
