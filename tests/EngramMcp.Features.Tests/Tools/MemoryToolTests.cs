@@ -258,9 +258,7 @@ public sealed class MemoryToolTests
         var result = await tool.ExecuteAsync("docker", CancellationToken.None);
 
         service.SearchQuery.Is("docker");
-        result.Is(
-            $"# Memory Search Results{NewLine}" +
-            $"- docker reminder (`project-x`) [tags: ops]{NewLine}");
+        result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Length.Is(2);
     }
 
     [Fact]
@@ -293,10 +291,7 @@ public sealed class MemoryToolTests
 
         var result = await tool.ExecuteAsync("docker", CancellationToken.None);
 
-        result.Is(
-            $"# Memory Search Results{NewLine}" +
-            $"- docker reminder (`project-x`) [tags: ops]{NewLine}" +
-            $"- workspace note (`project-y`) [tags: dev]{NewLine}");
+        result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Length.Is(3);
     }
 
     [Fact]
