@@ -4,13 +4,6 @@ using static EngramMcp.Core.BuiltInMemorySections;
 
 namespace EngramMcp.Infrastructure.Memory;
 
-public enum MemorySize
-{
-    Small,
-    Normal,
-    Big
-}
-
 public sealed class CodeMemoryCatalog : IMemoryCatalog
 {
     private readonly int _baseCapacity;

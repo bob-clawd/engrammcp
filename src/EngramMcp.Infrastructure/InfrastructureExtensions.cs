@@ -1,3 +1,4 @@
+using EngramMcp.Core;
 using EngramMcp.Core.Abstractions;
 using EngramMcp.Infrastructure.Memory;
 using Microsoft.Extensions.DependencyInjection;

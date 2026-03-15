@@ -1,5 +1,5 @@
 using EngramMcp.Host;
-using EngramMcp.Infrastructure.Memory;
+using EngramMcp.Core;
 using Is.Assertions;
 using EngramMcp.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
