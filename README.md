@@ -48,9 +48,9 @@ Example with an explicit file path and larger memory budget:
 
 ## What It Is
 
-EngramMcp is a small local-first MCP server that gives AI agents a persistent memory layer backed by a plain JSON file.
+EngramMcp is a local-first memory MCP for agents that need continuity, not a full knowledge platform. It gives coding agents and personal assistants a small, inspectable, structured memory they can carry across sessions without relying on hosted infrastructure.
 
-It is designed for agents that should retain useful context across sessions: who the user is, how they work, what matters long-term, what is currently in flight, and what changed recently.
+Built for trust and predictability, it focuses on durable facts, evolving context, and recent work state instead of embeddings, document ingestion, or opaque retrieval pipelines.
 
 The goal is not to build a general knowledge system. The goal is to give an agent a memory that is durable, inspectable, and simple enough to trust.
 
