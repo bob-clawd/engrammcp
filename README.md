@@ -18,17 +18,6 @@ dotnet tool install -g EngramMcp
 
 #### MCP config (OpenCode)
 
-```json
-{
-  "mcp": {
-    "memory": {
-      "type": "local",
-      "command": ["engrammcp"]
-    }
-  }
-}
-```
-
 EngramMcp stores memory by default in `.engram/memory.json` under the current workspace directory.
 
 Startup options:
