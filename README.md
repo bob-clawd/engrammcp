@@ -10,13 +10,13 @@ A Model Context Protocol (MCP) server for persistent agent memory.
 [![NuGet](https://img.shields.io/nuget/v/EngramMcp.svg)](https://www.nuget.org/packages/EngramMcp/)
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://www.nuget.org/packages/EngramMcp/)
 
-#### Installation
+### Installation
 
 ```bash
 dotnet tool install -g EngramMcp
 ```
 
-#### MCP config (OpenCode)
+### Configuration
 
 EngramMcp stores memory by default in `.engram/memory.json` under the current workspace directory.
 
