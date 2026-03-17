@@ -336,7 +336,7 @@ public sealed class MemoryServiceTests
         result.Entries[0].Text.Is("short");
         result.Entries[0].Tags!.SequenceEqual(["ops"]).IsTrue();
         result.Entries[0].Importance.Is("high");
-        result.MaintenanceToken.ShouldNotBeEmpty();
+        result.MaintenanceToken.IsNotEmpty();
     }
 
     [Fact]
@@ -347,7 +347,7 @@ public sealed class MemoryServiceTests
             [ShortTerm] = [],
             [MediumTerm] = [],
             [LongTerm] = [],
-            ["Project-X"] = [new(new DateTime(2026, 3, 11, 12, 0, 0, DateTimeKind.Utc), "custom")]
+            ["Project-X"] = [new MemoryEntry(new DateTime(2026, 3, 11, 12, 0, 0, DateTimeKind.Utc), "custom")]
         })));
 
         var result = await service.ReadForMaintenanceAsync("project-x");
@@ -356,7 +356,7 @@ public sealed class MemoryServiceTests
         result.Entries.Count.Is(1);
         result.Entries[0].Timestamp.Is("2026-03-11T12:00:00.0000000Z");
         result.Entries[0].Text.Is("custom");
-        result.MaintenanceToken.ShouldNotBeEmpty();
+        result.MaintenanceToken.IsNotEmpty();
     }
 
     [Fact]
