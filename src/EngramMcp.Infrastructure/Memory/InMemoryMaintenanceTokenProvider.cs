@@ -6,6 +6,7 @@ namespace EngramMcp.Infrastructure.Memory;
 
 public sealed class InMemoryMaintenanceTokenProvider : IMaintenanceTokenProvider
 {
+    private const int MaintenanceTokenByteCount = 16;
     private readonly ConcurrentDictionary<string, int> _sectionVersions = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, TokenState> _tokens = new(StringComparer.Ordinal);
 
@@ -13,7 +14,10 @@ public sealed class InMemoryMaintenanceTokenProvider : IMaintenanceTokenProvider
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(section);
 
-        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(MaintenanceTokenByteCount))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
         var version = _sectionVersions.GetOrAdd(section, 0);
 
         if (!_tokens.TryAdd(token, new TokenState(section, version, TokenLifecycleState.Available)))

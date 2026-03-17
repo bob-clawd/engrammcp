@@ -337,7 +337,8 @@ public sealed class MemoryServiceTests
         result.Entries[0].Text.Is("short");
         result.Entries[0].Tags!.SequenceEqual(["ops"]).IsTrue();
         result.Entries[0].Importance.Is("high");
-        result.MaintenanceToken.IsNotEmpty();
+        result.MaintenanceToken.Length.Is(22);
+        result.MaintenanceToken.All(IsBase64UrlCharacter).IsTrue();
     }
 
     [Fact]
@@ -357,7 +358,19 @@ public sealed class MemoryServiceTests
         result.Entries.Count.Is(1);
         result.Entries[0].Timestamp.Is("2026-03-11T12:00:00.0000000Z");
         result.Entries[0].Text.Is("custom");
-        result.MaintenanceToken.IsNotEmpty();
+        result.MaintenanceToken.Length.Is(22);
+        result.MaintenanceToken.All(IsBase64UrlCharacter).IsTrue();
+    }
+
+    [Fact]
+    public void InMemoryMaintenanceTokenProvider_IssuesCompactBase64UrlTokens()
+    {
+        var provider = new InMemoryMaintenanceTokenProvider();
+
+        var token = provider.Issue(ShortTerm);
+
+        token.Length.Is(22);
+        token.All(IsBase64UrlCharacter).IsTrue();
     }
 
     [Fact]
@@ -1093,6 +1106,12 @@ public sealed class MemoryServiceTests
             Timestamp = timestamp,
             Text = text
         };
+    }
+
+    private static bool IsBase64UrlCharacter(char value)
+    {
+        return char.IsAsciiLetterOrDigit(value)
+               || value is '-' or '_';
     }
 
     private sealed record MaintenanceWriteAttempt(bool Succeeded, string? StoredText, MaintenanceSectionWriteException? Exception);
