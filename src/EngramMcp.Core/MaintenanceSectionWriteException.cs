@@ -15,29 +15,29 @@ public sealed class MaintenanceSectionWriteException(MaintenanceSectionFailure f
         });
     }
 
-    public static MaintenanceSectionWriteException MaintenanceTokenMissing(string message)
+    public static MaintenanceSectionWriteException ConsolidationTokenMissing(string message)
     {
         return new MaintenanceSectionWriteException(new MaintenanceSectionFailure
         {
-            Category = "maintenance_token_missing",
+            Category = "consolidation_token_missing",
             Message = message
         });
     }
 
-    public static MaintenanceSectionWriteException MaintenanceTokenInvalid(string message)
+    public static MaintenanceSectionWriteException ConsolidationTokenInvalid(string message)
     {
         return new MaintenanceSectionWriteException(new MaintenanceSectionFailure
         {
-            Category = "maintenance_token_invalid",
+            Category = "consolidation_token_invalid",
             Message = message
         });
     }
 
-    public static MaintenanceSectionWriteException MaintenanceTokenStale(string message)
+    public static MaintenanceSectionWriteException ConsolidationTokenStale(string message)
     {
         return new MaintenanceSectionWriteException(new MaintenanceSectionFailure
         {
-            Category = "maintenance_token_stale",
+            Category = "consolidation_token_stale",
             Message = message
         });
     }

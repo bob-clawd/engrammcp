@@ -61,7 +61,7 @@ public sealed class MemoryService(
         {
             Section = resolvedSection,
             Entries = [.. entries.Select(ToMaintenanceEntry)],
-            MaintenanceToken = maintenanceTokenProvider.Issue(resolvedSection)
+            ConsolidationToken = maintenanceTokenProvider.Issue(resolvedSection)
         };
     }
 
@@ -102,14 +102,14 @@ public sealed class MemoryService(
 
     public async Task<MaintenanceSectionWriteResult> WriteForMaintenanceAsync(
         string section,
-        string maintenanceToken,
+        string consolidationToken,
         IReadOnlyList<MaintenanceMemoryEntry> entries,
         CancellationToken cancellationToken = default)
     {
         var normalizedSection = NormalizeSectionIdentifier(section);
 
-        if (string.IsNullOrWhiteSpace(maintenanceToken))
-            throw MaintenanceSectionWriteException.MaintenanceTokenMissing("Maintenance token is required for write mode. Read the section again before submitting a replacement.");
+        if (string.IsNullOrWhiteSpace(consolidationToken))
+            throw MaintenanceSectionWriteException.ConsolidationTokenMissing("Consolidation token is required for write mode. Call read first, then submit the full replacement for that same section.");
 
         ArgumentNullException.ThrowIfNull(entries);
 
@@ -124,15 +124,15 @@ public sealed class MemoryService(
                 container =>
                 {
                     resolvedSection = TryResolveExistingSectionName(normalizedSection, container)
-                                      ?? throw MaintenanceSectionWriteException.SectionNotFound($"Memory section '{normalizedSection}' was not found. Read an existing section before starting maintenance.");
+                                      ?? throw MaintenanceSectionWriteException.SectionNotFound($"Memory section '{normalizedSection}' was not found. Read an existing section before starting consolidation.");
 
-                    var reservationStatus = maintenanceTokenProvider.TryReserveForSection(maintenanceToken, resolvedSection, out reservation);
+                    var reservationStatus = maintenanceTokenProvider.TryReserveForSection(consolidationToken, resolvedSection, out reservation);
 
                     if (reservationStatus == MaintenanceTokenReservationStatus.Invalid)
-                        throw MaintenanceSectionWriteException.MaintenanceTokenInvalid($"Maintenance token is invalid for section '{resolvedSection}'. Read the section again and use the returned token.");
+                        throw MaintenanceSectionWriteException.ConsolidationTokenInvalid($"Consolidation token is invalid for section '{resolvedSection}'. Call read again for that section and use the returned token.");
 
                     if (reservationStatus == MaintenanceTokenReservationStatus.Stale)
-                        throw MaintenanceSectionWriteException.MaintenanceTokenStale($"Maintenance token is stale for section '{resolvedSection}'. Read the section again before any further maintenance.");
+                        throw MaintenanceSectionWriteException.ConsolidationTokenStale($"Consolidation token is stale for section '{resolvedSection}'. Call read again before any further consolidation.");
 
                     hasReservation = true;
 
@@ -225,11 +225,11 @@ public sealed class MemoryService(
         if (entries.Count == 0)
         {
             throw MaintenanceSectionWriteException.ValidationFailed(
-                "Maintenance writes must include at least one entry. This tool is for curation, not clearing a section.",
+                "Consolidation writes must include at least one entry. This tool replaces one section with a consolidated set; it does not clear sections.",
                 [new MaintenanceSectionFailureDetail
                 {
                     Field = "entries",
-                    Message = "Provide the complete curated replacement list with at least one entry."
+                    Message = "Provide the complete consolidated replacement list with at least one entry."
                 }]);
         }
 
@@ -307,7 +307,7 @@ public sealed class MemoryService(
         }
 
         if (details.Count > 0)
-            throw MaintenanceSectionWriteException.ValidationFailed("Maintenance write request is invalid.", details);
+            throw MaintenanceSectionWriteException.ValidationFailed("Consolidation write request is invalid.", details);
 
         return entries.Select(ToMemoryEntry).ToList();
     }

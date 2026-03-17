@@ -38,22 +38,22 @@ public static class FeatureExtensions
 
     extension(MaintenanceSectionReadResult result)
     {
-        internal MaintainSectionResponse ToMaintainSectionResponse()
+        internal ConsolidateResponse ToConsolidateResponse()
         {
-            return new MaintainSectionResponse
+            return new ConsolidateResponse
             {
                 Section = result.Section,
                 Entries = result.Entries,
-                MaintenanceToken = result.MaintenanceToken
+                ConsolidationToken = result.ConsolidationToken
             };
         }
     }
 
     extension(MaintenanceSectionWriteResult result)
     {
-        internal MaintainSectionResponse ToMaintainSectionResponse()
+        internal ConsolidateResponse ToConsolidateResponse()
         {
-            return new MaintainSectionResponse
+            return new ConsolidateResponse
             {
                 Section = result.Section,
                 Entries = result.Entries

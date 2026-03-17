@@ -8,10 +8,10 @@ using static EngramMcp.Core.BuiltInMemorySections;
 
 namespace EngramMcp.Features.Tests.Tools;
 
-public sealed class MaintainSectionToolTests
+public sealed class ConsolidateToolTests
 {
     [Fact]
-    public async Task MaintainSectionTool_ReadMode_ReturnsRawEntriesAndToken()
+    public async Task ConsolidateTool_ReadMode_ReturnsRawEntriesAndToken()
     {
         var service = new SpyMemoryService
         {
@@ -28,10 +28,10 @@ public sealed class MaintainSectionToolTests
                         Importance = "high"
                     }
                 ],
-                MaintenanceToken = "token-1"
+                ConsolidationToken = "token-1"
             }
         };
-        var tool = new MaintainSectionTool(service);
+        var tool = new ConsolidateTool(service);
 
         var result = await tool.ExecuteAsync("read", ShortTerm, cancellationToken: CancellationToken.None);
 
@@ -42,11 +42,11 @@ public sealed class MaintainSectionToolTests
         result.Entries[0].Text.Is("short");
         result.Entries[0].Tags!.SequenceEqual(["ops"]).IsTrue();
         result.Entries[0].Importance.Is("high");
-        result.MaintenanceToken.Is("token-1");
+        result.ConsolidationToken.Is("token-1");
     }
 
     [Fact]
-    public async Task MaintainSectionTool_WriteMode_ReturnsStoredEntriesWithoutToken()
+    public async Task ConsolidateTool_WriteMode_ReturnsStoredEntriesWithoutToken()
     {
         var service = new SpyMemoryService
         {
@@ -63,12 +63,12 @@ public sealed class MaintainSectionToolTests
                 ]
             }
         };
-        var tool = new MaintainSectionTool(service);
+        var tool = new ConsolidateTool(service);
 
         var result = await tool.ExecuteAsync(
             "write",
             "project-x",
-            maintenanceToken: "token-1",
+            consolidationToken: "token-1",
             entries:
             [
                 new MaintenanceMemoryEntry
@@ -80,27 +80,27 @@ public sealed class MaintainSectionToolTests
             cancellationToken: CancellationToken.None);
 
         service.MaintenanceWriteSection.Is("project-x");
-        service.MaintenanceWriteToken.Is("token-1");
+        service.ConsolidationWriteToken.Is("token-1");
         service.MaintenanceWriteEntries!.Count.Is(1);
         result.Section.Is("project-x");
         result.Entries!.Count.Is(1);
         result.Entries[0].Text.Is("custom");
-        result.MaintenanceToken.Is(null);
+        result.ConsolidationToken.Is(null);
     }
 
     [Fact]
-    public async Task MaintainSectionTool_WriteMode_ReturnsStructuredFailureFromService()
+    public async Task ConsolidateTool_WriteMode_ReturnsStructuredFailureFromService()
     {
         var service = new SpyMemoryService
         {
             MaintenanceWriteException = MaintenanceSectionWriteException.SectionNotFound("missing section")
         };
-        var tool = new MaintainSectionTool(service);
+        var tool = new ConsolidateTool(service);
 
         var result = await tool.ExecuteAsync(
             "write",
             "project-x",
-            maintenanceToken: "token-1",
+            consolidationToken: "token-1",
             entries: [new MaintenanceMemoryEntry { Timestamp = "2026-03-11T12:00:00.0000000+00:00", Text = "custom" }],
             cancellationToken: CancellationToken.None);
 
@@ -111,13 +111,13 @@ public sealed class MaintainSectionToolTests
     }
 
     [Fact]
-    public async Task MaintainSectionTool_ReadMode_PropagatesUnknownSectionFailure()
+    public async Task ConsolidateTool_ReadMode_PropagatesUnknownSectionFailure()
     {
         var service = new SpyMemoryService
         {
             MaintenanceReadException = MaintenanceSectionWriteException.SectionNotFound("missing")
         };
-        var tool = new MaintainSectionTool(service);
+        var tool = new ConsolidateTool(service);
 
         var result = await tool.ExecuteAsync("read", "project-missing", cancellationToken: CancellationToken.None);
 
@@ -126,19 +126,19 @@ public sealed class MaintainSectionToolTests
     }
 
     [Fact]
-    public async Task MaintainSectionTool_ThrowsForInvalidMode()
+    public async Task ConsolidateTool_ThrowsForInvalidMode()
     {
-        var tool = new MaintainSectionTool(new SpyMemoryService());
+        var tool = new ConsolidateTool(new SpyMemoryService());
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() => tool.ExecuteAsync("merge", ShortTerm, cancellationToken: CancellationToken.None));
 
-        exception.Message.Is("Maintenance mode must be 'read' or 'write'. (Parameter 'mode')");
+        exception.Message.Is("Consolidation mode must be 'read' or 'write'. (Parameter 'mode')");
     }
 
     [Fact]
-    public async Task MaintainSectionTool_WriteMode_ReturnsStructuredFailureWhenMaintenanceTokenIsMissing()
+    public async Task ConsolidateTool_WriteMode_ReturnsStructuredFailureWhenConsolidationTokenIsMissing()
     {
-        var tool = new MaintainSectionTool(new SpyMemoryService());
+        var tool = new ConsolidateTool(new SpyMemoryService());
 
         var result = await tool.ExecuteAsync(
             "write",
@@ -148,31 +148,31 @@ public sealed class MaintainSectionToolTests
 
         result.Section.Is(null);
         result.Entries.Is(null);
-        result.Failure!.Category.Is("maintenance_token_missing");
-        result.Failure.Message.Is("Maintenance token is required for write mode. Read the section again before submitting a replacement.");
+        result.Failure!.Category.Is("consolidation_token_missing");
+        result.Failure.Message.Is("Consolidation token is required for write mode. Call read first, then submit the full replacement for that same section.");
     }
 
     [Fact]
-    public async Task MaintainSectionTool_WriteMode_ReturnsStructuredFailureWhenEntriesAreMissing()
+    public async Task ConsolidateTool_WriteMode_ReturnsStructuredFailureWhenEntriesAreMissing()
     {
-        var tool = new MaintainSectionTool(new SpyMemoryService());
+        var tool = new ConsolidateTool(new SpyMemoryService());
 
         var result = await tool.ExecuteAsync(
             "write",
             ShortTerm,
-            maintenanceToken: "token-1",
+            consolidationToken: "token-1",
             cancellationToken: CancellationToken.None);
 
         result.Failure!.Category.Is("validation_failed");
         var detail = result.Failure.Details!.Single();
         detail.Field.Is("entries");
-        detail.Message.Is("Entries are required for write mode and must contain the complete curated replacement list.");
+        detail.Message.Is("Entries are required for write mode and must contain the complete consolidated replacement list for that same section.");
     }
 
     [Fact]
-    public void MaintainSectionResponse_SerializesStorageShapedEntriesAndOmitsNullOptionals()
+    public void ConsolidateResponse_SerializesStorageShapedEntriesAndOmitsNullOptionals()
     {
-        var response = new MaintainSectionResponse
+        var response = new ConsolidateResponse
         {
             Section = ShortTerm,
             Entries =
@@ -183,7 +183,7 @@ public sealed class MaintainSectionToolTests
                     Text = "short"
                 }
             ],
-            MaintenanceToken = "token-1"
+            ConsolidationToken = "token-1"
         };
 
         var json = JsonSerializer.Serialize(response);
@@ -191,7 +191,7 @@ public sealed class MaintainSectionToolTests
         var root = document.RootElement;
 
         root.GetProperty("section").GetString().Is(ShortTerm);
-        root.GetProperty("maintenanceToken").GetString().Is("token-1");
+        root.GetProperty("consolidationToken").GetString().Is("token-1");
         root.GetProperty("entries").GetArrayLength().Is(1);
         root.GetProperty("entries")[0].GetProperty("timestamp").GetString().Is("2026-03-11T12:00:00.0000000+00:00");
         root.GetProperty("entries")[0].GetProperty("text").GetString().Is("short");
@@ -201,9 +201,9 @@ public sealed class MaintainSectionToolTests
     }
 
     [Fact]
-    public void MaintainSectionResponse_SerializesStructuredFailure()
+    public void ConsolidateResponse_SerializesStructuredFailure()
     {
-        var response = new MaintainSectionResponse
+        var response = new ConsolidateResponse
         {
             Failure = new MaintenanceSectionFailure
             {
@@ -226,7 +226,7 @@ public sealed class MaintainSectionToolTests
 
         root.TryGetProperty("section", out _).IsFalse();
         root.TryGetProperty("entries", out _).IsFalse();
-        root.TryGetProperty("maintenanceToken", out _).IsFalse();
+        root.TryGetProperty("consolidationToken", out _).IsFalse();
         root.GetProperty("failure").GetProperty("category").GetString().Is("validation_failed");
         root.GetProperty("failure").GetProperty("message").GetString().Is("invalid");
         root.GetProperty("failure").GetProperty("details")[0].GetProperty("field").GetString().Is("entries");

@@ -6,5 +6,5 @@ public sealed record MaintenanceSectionReadResult
 
     public required IReadOnlyList<MaintenanceMemoryEntry> Entries { get; init; }
 
-    public required string MaintenanceToken { get; init; }
+    public required string ConsolidationToken { get; init; }
 }

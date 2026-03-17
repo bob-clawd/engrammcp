@@ -19,7 +19,7 @@ public interface IMemoryService
 
     Task<MaintenanceSectionWriteResult> WriteForMaintenanceAsync(
         string section,
-        string maintenanceToken,
+        string consolidationToken,
         IReadOnlyList<MaintenanceMemoryEntry> entries,
         CancellationToken cancellationToken = default);
 }

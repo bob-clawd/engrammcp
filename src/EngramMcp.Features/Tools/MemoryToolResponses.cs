@@ -65,7 +65,7 @@ public sealed record SearchResponse
     public required IReadOnlyList<SearchItemResponse> Results { get; init; }
 }
 
-public sealed record MaintainSectionResponse
+public sealed record ConsolidateResponse
 {
     [JsonPropertyName("section")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -75,9 +75,9 @@ public sealed record MaintainSectionResponse
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<MaintenanceMemoryEntry>? Entries { get; init; }
 
-    [JsonPropertyName("maintenanceToken")]
+    [JsonPropertyName("consolidationToken")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? MaintenanceToken { get; init; }
+    public string? ConsolidationToken { get; init; }
 
     [JsonPropertyName("failure")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

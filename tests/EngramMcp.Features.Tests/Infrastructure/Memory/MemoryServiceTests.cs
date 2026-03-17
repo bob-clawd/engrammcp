@@ -320,7 +320,7 @@ public sealed class MemoryServiceTests
     }
 
     [Fact]
-    public async Task ReadForMaintenanceAsync_ReturnsBuiltInSectionWithRawEntriesAndToken()
+    public async Task ReadForMaintenanceAsync_ReturnsBuiltInSectionWithRawEntriesAndConsolidationToken()
     {
         var service = new MemoryService(new CodeMemoryCatalog(MemorySize.Normal), new InMemoryStore(CreateContainer(new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal)
         {
@@ -337,12 +337,12 @@ public sealed class MemoryServiceTests
         result.Entries[0].Text.Is("short");
         result.Entries[0].Tags!.SequenceEqual(["ops"]).IsTrue();
         result.Entries[0].Importance.Is("high");
-        result.MaintenanceToken.Length.Is(22);
-        result.MaintenanceToken.All(IsBase64UrlCharacter).IsTrue();
+        result.ConsolidationToken.Length.Is(22);
+        result.ConsolidationToken.All(IsBase64UrlCharacter).IsTrue();
     }
 
     [Fact]
-    public async Task ReadForMaintenanceAsync_ReturnsExistingCustomSectionWithRawEntriesAndToken()
+    public async Task ReadForMaintenanceAsync_ReturnsExistingCustomSectionWithRawEntriesAndConsolidationToken()
     {
         var service = new MemoryService(new CodeMemoryCatalog(MemorySize.Normal), new InMemoryStore(CreateContainer(new Dictionary<string, List<MemoryEntry>>(StringComparer.Ordinal)
         {
@@ -358,8 +358,8 @@ public sealed class MemoryServiceTests
         result.Entries.Count.Is(1);
         result.Entries[0].Timestamp.Is("2026-03-11T12:00:00.0000000Z");
         result.Entries[0].Text.Is("custom");
-        result.MaintenanceToken.Length.Is(22);
-        result.MaintenanceToken.All(IsBase64UrlCharacter).IsTrue();
+        result.ConsolidationToken.Length.Is(22);
+        result.ConsolidationToken.All(IsBase64UrlCharacter).IsTrue();
     }
 
     [Fact]
@@ -405,7 +405,7 @@ public sealed class MemoryServiceTests
 
         var written = await service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -442,10 +442,10 @@ public sealed class MemoryServiceTests
         var service = new MemoryService(new CodeMemoryCatalog(MemorySize.Normal), new InMemoryStore(CreateContainer()));
         var read = await service.ReadForMaintenanceAsync(ShortTerm);
 
-        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(MediumTerm, read.MaintenanceToken, [CreateMaintenanceEntry("moved") ]));
+        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(MediumTerm, read.ConsolidationToken, [CreateMaintenanceEntry("moved") ]));
 
-        exception.Failure.Category.Is("maintenance_token_invalid");
-        exception.Failure.Message.Is($"Maintenance token is invalid for section '{MediumTerm}'. Read the section again and use the returned token.");
+        exception.Failure.Category.Is("consolidation_token_invalid");
+        exception.Failure.Message.Is($"Consolidation token is invalid for section '{MediumTerm}'. Call read again for that section and use the returned token.");
     }
 
     [Fact]
@@ -454,12 +454,12 @@ public sealed class MemoryServiceTests
         var service = new MemoryService(new CodeMemoryCatalog(MemorySize.Normal), new InMemoryStore(CreateContainer()));
         var read = await service.ReadForMaintenanceAsync(ShortTerm);
 
-        await service.WriteForMaintenanceAsync(ShortTerm, read.MaintenanceToken, [CreateMaintenanceEntry("first")]);
+        await service.WriteForMaintenanceAsync(ShortTerm, read.ConsolidationToken, [CreateMaintenanceEntry("first")]);
 
-        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, read.MaintenanceToken, [CreateMaintenanceEntry("second") ]));
+        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, read.ConsolidationToken, [CreateMaintenanceEntry("second") ]));
 
-        exception.Failure.Category.Is("maintenance_token_stale");
-        exception.Failure.Message.Is($"Maintenance token is stale for section '{ShortTerm}'. Read the section again before any further maintenance.");
+        exception.Failure.Category.Is("consolidation_token_stale");
+        exception.Failure.Message.Is($"Consolidation token is stale for section '{ShortTerm}'. Call read again before any further consolidation.");
     }
 
     [Fact]
@@ -476,7 +476,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -507,7 +507,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -531,7 +531,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -557,7 +557,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [entry]));
 
         exception.Failure.Category.Is("validation_failed");
@@ -574,7 +574,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -599,7 +599,7 @@ public sealed class MemoryServiceTests
         var service = new MemoryService(new CodeMemoryCatalog(MemorySize.Normal), memoryStore);
         var read = await service.ReadForMaintenanceAsync(ShortTerm);
 
-        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, read.MaintenanceToken, []));
+        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, read.ConsolidationToken, []));
 
         exception.Failure.Category.Is("validation_failed");
         exception.Failure.Details!.Single().Field.Is("entries");
@@ -607,13 +607,13 @@ public sealed class MemoryServiceTests
     }
 
     [Fact]
-    public async Task WriteForMaintenanceAsync_RejectsMissingMaintenanceToken()
+    public async Task WriteForMaintenanceAsync_RejectsMissingConsolidationToken()
     {
         var service = new MemoryService(new CodeMemoryCatalog(MemorySize.Normal), new InMemoryStore(CreateContainer()));
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, " ", [CreateMaintenanceEntry("entry") ]));
 
-        exception.Failure.Category.Is("maintenance_token_missing");
+        exception.Failure.Category.Is("consolidation_token_missing");
     }
 
     [Fact]
@@ -633,7 +633,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, "bogus", [CreateMaintenanceEntry("entry") ]));
 
-        exception.Failure.Category.Is("maintenance_token_invalid");
+        exception.Failure.Category.Is("consolidation_token_invalid");
     }
 
     [Fact]
@@ -644,7 +644,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             Enumerable.Range(1, 6)
                 .Select(index => new MaintenanceMemoryEntry
                 {
@@ -665,7 +665,7 @@ public sealed class MemoryServiceTests
 
         await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             Enumerable.Range(1, 6)
                 .Select(index => new MaintenanceMemoryEntry
                 {
@@ -676,7 +676,7 @@ public sealed class MemoryServiceTests
 
         var retry = await service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -703,7 +703,7 @@ public sealed class MemoryServiceTests
 
         var result = await service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -729,11 +729,11 @@ public sealed class MemoryServiceTests
         })));
         var firstRead = await service.ReadForMaintenanceAsync(ShortTerm);
 
-        await service.WriteForMaintenanceAsync(ShortTerm, firstRead.MaintenanceToken, [CreateMaintenanceEntry("old short", "2026-03-11T09:00:00.0000000Z")]);
+        await service.WriteForMaintenanceAsync(ShortTerm, firstRead.ConsolidationToken, [CreateMaintenanceEntry("old short", "2026-03-11T09:00:00.0000000Z")]);
 
-        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, firstRead.MaintenanceToken, [CreateMaintenanceEntry("again") ]));
+        var exception = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, firstRead.ConsolidationToken, [CreateMaintenanceEntry("again") ]));
 
-        exception.Failure.Category.Is("maintenance_token_stale");
+        exception.Failure.Category.Is("consolidation_token_stale");
     }
 
     [Fact]
@@ -743,11 +743,11 @@ public sealed class MemoryServiceTests
         var firstRead = await service.ReadForMaintenanceAsync(ShortTerm);
         var secondRead = await service.ReadForMaintenanceAsync(ShortTerm);
 
-        await service.WriteForMaintenanceAsync(ShortTerm, firstRead.MaintenanceToken, [CreateMaintenanceEntry("first")]);
+        await service.WriteForMaintenanceAsync(ShortTerm, firstRead.ConsolidationToken, [CreateMaintenanceEntry("first")]);
 
-        var secondException = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, secondRead.MaintenanceToken, [CreateMaintenanceEntry("second") ]));
+        var secondException = await Assert.ThrowsAsync<MaintenanceSectionWriteException>(() => service.WriteForMaintenanceAsync(ShortTerm, secondRead.ConsolidationToken, [CreateMaintenanceEntry("second") ]));
 
-        secondException.Failure.Category.Is("maintenance_token_stale");
+        secondException.Failure.Category.Is("consolidation_token_stale");
     }
 
     [Fact]
@@ -779,15 +779,15 @@ public sealed class MemoryServiceTests
                 }
             ];
 
-            var firstTask = AttemptMaintenanceWriteAsync(service, read.MaintenanceToken, firstEntries);
-            var secondTask = AttemptMaintenanceWriteAsync(service, read.MaintenanceToken, secondEntries);
+            var firstTask = AttemptMaintenanceWriteAsync(service, read.ConsolidationToken, firstEntries);
+            var secondTask = AttemptMaintenanceWriteAsync(service, read.ConsolidationToken, secondEntries);
 
             var results = await Task.WhenAll(firstTask, secondTask);
             var failureCategory = results.Single(result => !result.Succeeded).Exception!.Failure.Category;
 
             results.Count(result => result.Succeeded).Is(1);
             results.Count(result => !result.Succeeded).Is(1);
-            new[] { "maintenance_token_invalid", "maintenance_token_stale" }.Contains(failureCategory).IsTrue();
+            new[] { "consolidation_token_invalid", "consolidation_token_stale" }.Contains(failureCategory).IsTrue();
 
             var storedTexts = (await service.ReadAsync(ShortTerm)).Memories[ShortTerm].Select(entry => entry.Text).ToArray();
             storedTexts.Length.Is(1);
@@ -814,7 +814,7 @@ public sealed class MemoryServiceTests
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -828,7 +828,7 @@ public sealed class MemoryServiceTests
 
         var retry = await service.WriteForMaintenanceAsync(
             ShortTerm,
-            read.MaintenanceToken,
+            read.ConsolidationToken,
             [
                 new MaintenanceMemoryEntry
                 {
@@ -1085,12 +1085,12 @@ public sealed class MemoryServiceTests
 
     private static async Task<MaintenanceWriteAttempt> AttemptMaintenanceWriteAsync(
         MemoryService service,
-        string maintenanceToken,
+        string consolidationToken,
         IReadOnlyList<MaintenanceMemoryEntry> entries)
     {
         try
         {
-            var result = await service.WriteForMaintenanceAsync(ShortTerm, maintenanceToken, entries);
+            var result = await service.WriteForMaintenanceAsync(ShortTerm, consolidationToken, entries);
             return new MaintenanceWriteAttempt(true, result.Entries.SingleOrDefault()?.Text, null);
         }
         catch (MaintenanceSectionWriteException exception)

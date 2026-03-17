@@ -22,7 +22,7 @@ internal sealed class SpyMemoryService : IMemoryService
 
     public string? MaintenanceWriteSection { get; private set; }
 
-    public string? MaintenanceWriteToken { get; private set; }
+    public string? ConsolidationWriteToken { get; private set; }
 
     public IReadOnlyList<MaintenanceMemoryEntry>? MaintenanceWriteEntries { get; private set; }
 
@@ -34,7 +34,7 @@ internal sealed class SpyMemoryService : IMemoryService
     {
         Section = ShortTerm,
         Entries = [],
-        MaintenanceToken = "token"
+        ConsolidationToken = "token"
     };
 
     public MaintenanceSectionWriteResult MaintenanceWriteResult { get; init; } = new()
@@ -101,12 +101,12 @@ internal sealed class SpyMemoryService : IMemoryService
 
     public Task<MaintenanceSectionWriteResult> WriteForMaintenanceAsync(
         string section,
-        string maintenanceToken,
+        string consolidationToken,
         IReadOnlyList<MaintenanceMemoryEntry> entries,
         CancellationToken cancellationToken = default)
     {
         MaintenanceWriteSection = section;
-        MaintenanceWriteToken = maintenanceToken;
+        ConsolidationWriteToken = consolidationToken;
         MaintenanceWriteEntries = entries;
 
         return MaintenanceWriteException is null
