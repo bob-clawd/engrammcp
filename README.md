@@ -50,32 +50,17 @@ Example with an explicit file path and larger memory budget:
 
 EngramMcp is a local-first memory MCP for agents that need continuity, not a full knowledge platform. It gives coding agents and personal assistants a small, inspectable, structured memory they can carry across sessions without relying on hosted infrastructure.
 
-Built for trust and predictability, it focuses on durable facts, evolving context, and recent work state instead of embeddings, document ingestion, or opaque retrieval pipelines.
+Built for trust and predictability, it focuses on durable facts, evolving context, and recent work state instead of embeddings, document ingestion, or opaque retrieval pipelines. The goal is not to build a general knowledge system; the goal is to give an agent a memory that stays durable, inspectable, and simple enough to trust.
 
-The goal is not to build a general knowledge system. The goal is to give an agent a memory that is durable, inspectable, and simple enough to trust.
-
-## Who It Is For
-
-EngramMcp is built for developers and local-first AI users who want persistent memory without handing that memory off to a hosted platform.
-
-It is a strong fit for people who want:
+It works best for developers and local-first AI users who want:
 
 - persistent memory for a coding agent or personal assistant
 - local, human-readable storage they can inspect themselves
-- a small and predictable memory model instead of a larger knowledge stack
 - clear separation between durable facts, evolving context, and recent work state
+- lightweight continuity across days or weeks without extra infrastructure
+- a small and predictable memory model instead of a larger knowledge stack
 
-## Best-Fit Use Cases
-
-EngramMcp works best for workflows like:
-
-- remembering user preferences, conventions, and working style
-- carrying project context forward across days or weeks
-- preserving recent progress so the next session can continue quickly
-- storing important facts and decisions in a form the human can audit
-- giving a local coding agent lightweight continuity without extra infrastructure
-
-## Who It Is Not For
+Typical uses include remembering preferences and conventions, carrying project context forward, preserving recent progress for the next session, and storing important facts or decisions in a form the human can audit.
 
 EngramMcp is intentionally narrow. It is not designed to be:
 
@@ -85,16 +70,11 @@ EngramMcp is intentionally narrow. It is not designed to be:
 - a high-scale multi-user write-heavy service
 - an enterprise platform for permissions, governance, or hosted memory
 
-## What It Optimizes For
+It optimizes for:
 
-EngramMcp optimizes for a specific kind of memory:
-
-- local-first
-- transparent
-- structured
-- durable for everyday agent workflows
-- small enough to reason about
-- simple enough to trust
+- local-first, transparent, structured storage
+- durable memory for everyday agent workflows
+- a model that stays small enough to reason about and simple enough to trust
 
 ## What You Can Use It For
 
@@ -105,7 +85,7 @@ EngramMcp optimizes for a specific kind of memory:
 | **Store Medium-Term** | Save useful context that may change over time                                      |
 | **Store Short-Term**  | Save the recent working state for fast next-session continuation                   |
 | **Read Section**      | Read the contents of one specific memory section                                   |
-| **Consolidate**       | Read one existing section, then write back a token-guarded full replacement        |
+| **Consolidate**       | Clean up one existing section by rewriting it as a clearer, consolidated whole      |
 | **Store**             | Save memory into any named section, including custom sections created on first use |
 | **Search**            | Search individual memory entries across section names, tags, and text              |
 
@@ -261,15 +241,14 @@ Example `search(query)` response shape:
 
 All write tools support optional `tags` and `importance`, including `store(section, text, tags?, importance?)` and the built-in section writers.
 
-`consolidate` is the memory consolidation tool for exactly one existing section at a time. Use it with a strict read-before-write workflow; it is not an append API, partial patch API, or deletion API:
+`consolidate` is for memory cleanup on exactly one existing section at a time. Think of it like memory consolidation during sleep: you pull a section out, sort and strengthen what matters, merge duplicates, reorganize scattered details, and write back a cleaner whole.
 
-- call `mode = "read"` first to fetch the canonical section name, raw storage-shaped `entries`, and a `consolidationToken`
-- consolidate the replacement externally, then call `mode = "write"` with that same section, the returned token, and the full replacement `entries`
-- consolidation reads fail for unknown sections and do not issue tokens
-- consolidation writes do not create sections, require at least one entry, require valid non-empty `text` and valid `timestamp` on every entry, reject unsupported `importance`, and may normalize dirty tags
-- timestamps remain semantically meaningful during consolidation; callers intentionally choose the timestamps they write back
-- consolidation write failures are returned as structured `failure` payloads with categories such as `validation_failed`, `consolidation_token_missing`, `consolidation_token_invalid`, `consolidation_token_stale`, and `section_not_found`
-- after any successful consolidation write, including a no-op rewrite, every previously issued token for that section becomes stale and clients must `read` again before another consolidation round
+- use it when a section has become noisy, repetitive, or scattered and should be rewritten as one coherent section
+- the flow is simple: `read` the section, consolidate the entries externally, then `write` back the full revised section
+- the write step uses the returned token and fully replaces that section's contents
+- it works only on an existing section at a time; it does not create a new section
+- it is not for appending, partial patching, deleting individual entries, or other incremental edits
+
 
 
 ## System Prompt
@@ -297,3 +276,7 @@ Avoid storing duplicate information.
 - memory_store_mediumterm: Use for personal and work-related information that may evolve over time (preferences, hobbies, working style, favorite tools, music taste).
 - memory_store_shortterm: Use for work-related context that helps resume progress in future sessions (completed tasks, checkpoints, important findings).
 - memory_store: Use for custom memory sections.
+
+### Consolidation
+
+- memory_consolidate: Never use this tool unless the user explicitly asks you to.
