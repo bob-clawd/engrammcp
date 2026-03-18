@@ -26,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="..\..\..\..\..\..\nuget\packages\assertwithis\1.10.3\contentFiles\any\any\is.configuration.json">
+    <None Update="is.configuration.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
   </ItemGroup>
 
 </Project>
