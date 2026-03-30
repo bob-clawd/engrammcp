@@ -20,7 +20,6 @@ public static class HostExtensions
         public void Compose(MemoryFileOptions options) => services
             .AddSingleton(options)
             .WithEngramMcp(options.FilePath)
-            .AddHostedService<StartupValidationService>()
             .AddMcpRuntime();
 
         private void AddMcpRuntime()
