@@ -90,6 +90,8 @@ You can think of it like this:
 
 That means the system naturally drifts toward keeping what continues to matter and forgetting what does not.
 
+Retention is a memory's budget for future recalls. Each memory receives an initial budget based on its retention tier. Every recall spends part of that budget. When a memory proves materially useful, reinforcement restores some of it. This keeps short-term memories temporary, makes long-term memories resilient, and allows useful memories to earn a longer life over time.
+
 With the current defaults, a rough mental model is:
 
 - a short memory lasts about 5 recalls if it is never reinforced
