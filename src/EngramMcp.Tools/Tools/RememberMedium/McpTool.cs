@@ -9,9 +9,19 @@ public sealed class McpTool(IMemoryService memoryService) : Tool
 {
     [McpServerTool(Name = "remember_medium", Title = "Remember Medium")]
     [Description("Store information that is useful across sessions but may change over time. Use for evolving preferences, personal events, decisions made, lessons learned.")]
-    public Task ExecuteAsync(
+    public async Task<string> ExecuteAsync(
         [Description("The memory to store.")]
         string text,
-        CancellationToken cancellationToken = default) =>
-        memoryService.RememberAsync(RetentionTier.Medium, text, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await memoryService.RememberAsync(RetentionTier.Medium, text, cancellationToken).ConfigureAwait(false);
+            return "Stored medium-term memory.";
+        }
+        catch (ArgumentException exception)
+        {
+            return exception.Message;
+        }
+    }
 }

@@ -9,9 +9,19 @@ public sealed class McpTool(IMemoryService memoryService) : Tool
 {
     [McpServerTool(Name = "remember_long", Title = "Remember Long")]
     [Description("Store information expected to remain valid over long periods. Use for durable facts, stable constraints, or information with low expected change frequency.")]
-    public Task ExecuteAsync(
+    public async Task<string> ExecuteAsync(
         [Description("The memory to store.")]
         string text,
-        CancellationToken cancellationToken = default) =>
-        memoryService.RememberAsync(RetentionTier.Long, text, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await memoryService.RememberAsync(RetentionTier.Long, text, cancellationToken).ConfigureAwait(false);
+            return "Stored long-term memory.";
+        }
+        catch (ArgumentException exception)
+        {
+            return exception.Message;
+        }
+    }
 }

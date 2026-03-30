@@ -12,8 +12,9 @@ public sealed class RememberMediumToolTests
         var memoryService = new ToolTestMemoryService();
         var tool = new EngramMcp.Tools.Tools.RememberMedium.McpTool(memoryService);
 
-        await tool.ExecuteAsync("Remember this");
+        var response = await tool.ExecuteAsync("Remember this");
 
+        response.Is("Stored medium-term memory.");
         memoryService.RememberedTier.Is(RetentionTier.Medium);
         memoryService.RememberedText.Is("Remember this");
     }

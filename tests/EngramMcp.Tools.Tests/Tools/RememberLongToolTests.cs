@@ -12,8 +12,9 @@ public sealed class RememberLongToolTests
         var memoryService = new ToolTestMemoryService();
         var tool = new EngramMcp.Tools.Tools.RememberLong.McpTool(memoryService);
 
-        await tool.ExecuteAsync("Remember this");
+        var response = await tool.ExecuteAsync("Remember this");
 
+        response.Is("Stored long-term memory.");
         memoryService.RememberedTier.Is(RetentionTier.Long);
         memoryService.RememberedText.Is("Remember this");
     }

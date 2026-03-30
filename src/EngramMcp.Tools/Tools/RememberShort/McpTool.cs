@@ -9,9 +9,19 @@ public sealed class McpTool(IMemoryService memoryService) : Tool
 {
     [McpServerTool(Name = "remember_short", Title = "Remember Short")]
     [Description("Store session-level context that helps future continuation. Use for recent progress, temporary working context, intermediate conclusions, or resume points.")]
-    public Task ExecuteAsync(
+    public async Task<string> ExecuteAsync(
         [Description("The memory to store.")]
         string text,
-        CancellationToken cancellationToken = default) =>
-        memoryService.RememberAsync(RetentionTier.Short, text, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await memoryService.RememberAsync(RetentionTier.Short, text, cancellationToken).ConfigureAwait(false);
+            return "Stored short-term memory.";
+        }
+        catch (ArgumentException exception)
+        {
+            return exception.Message;
+        }
+    }
 }
