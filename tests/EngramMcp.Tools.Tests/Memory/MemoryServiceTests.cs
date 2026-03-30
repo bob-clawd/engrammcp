@@ -43,7 +43,7 @@ public sealed class MemoryServiceTests
         store.Document.Memories.Count.Is(1);
         store.Document.Memories[0].Id.Is("260329142501");
         store.Document.Memories[0].Text.Is("Remember this");
-        store.Document.Memories[0].Retention.Is(10d);
+        store.Document.Memories[0].Retention.Is(25d);
     }
 
     [Fact]
@@ -81,6 +81,67 @@ public sealed class MemoryServiceTests
         await service.ReinforceAsync(["known"]);
 
         store.Document.Memories[0].Retention.Is(11d);
+    }
+
+    [Fact]
+    public async Task Short_memory_without_reinforcement_disappears_after_five_recalls()
+    {
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument());
+        await CreateService(store, new FixedMemoryIdGenerator("short-id")).RememberAsync(RetentionTier.Short, "Temporary note");
+
+        for (var session = 1; session <= 5; session++)
+            await CreateService(store).RecallAsync();
+
+        store.Document.Memories.IsEmpty();
+    }
+
+    [Fact]
+    public async Task Frequently_reinforced_short_memory_can_survive_a_few_sessions()
+    {
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument());
+        await CreateService(store, new FixedMemoryIdGenerator("short-id")).RememberAsync(RetentionTier.Short, "Active working note");
+
+        for (var session = 1; session <= 5; session++)
+        {
+            var service = CreateService(store);
+            await service.RecallAsync();
+            await service.ReinforceAsync(["short-id"]);
+        }
+
+        store.Document.Memories.Select(memory => memory.Id).Is(["short-id"]);
+        Round(store.Document.Memories[0].Retention).Is(1.34d);
+    }
+
+    [Fact]
+    public async Task Retention_model_example_shows_how_memories_diverge_over_thirty_sessions()
+    {
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument());
+
+        await CreateService(store, new FixedMemoryIdGenerator("short-id")).RememberAsync(RetentionTier.Short, "Ephemeral detail");
+        await CreateService(store, new FixedMemoryIdGenerator("medium-id")).RememberAsync(RetentionTier.Medium, "Useful preference");
+        await CreateService(store, new FixedMemoryIdGenerator("long-id")).RememberAsync(RetentionTier.Long, "Stable identity fact");
+
+        for (var session = 1; session <= 20; session++)
+        {
+            var service = CreateService(store);
+            await service.RecallAsync();
+
+            if (session is 10 or 15)
+                await service.ReinforceAsync(["medium-id"]);
+
+            if (session is 5 or 10 or 15)
+                await service.ReinforceAsync(["long-id"]);
+        }
+
+        store.Document.Memories.Select(memory => memory.Id).Is(["medium-id", "long-id"]);
+
+        var mediumMemory = store.Document.Memories.Single(memory => memory.Id == "medium-id");
+        var longMemory = store.Document.Memories.Single(memory => memory.Id == "long-id");
+
+        mediumMemory.Text.Is("Useful preference");
+        longMemory.Text.Is("Stable identity fact");
+        Round(mediumMemory.Retention).Is(7.65d);
+        Round(longMemory.Retention).Is(109.9d);
     }
 
     [Fact]
@@ -128,4 +189,6 @@ public sealed class MemoryServiceTests
     {
         public string CreateId(IReadOnlyCollection<string> existingIds, DateTime now) => id;
     }
+
+    private static double Round(double value) => Math.Round(value, 2);
 }

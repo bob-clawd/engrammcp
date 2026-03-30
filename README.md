@@ -44,21 +44,23 @@ Example:
 
 ## What It Is
 
-EngramMcp is a local-first memory MCP for agents that need continuity, not a search engine or knowledge platform.
+EngramMcp gives an agent a small local memory that can survive across sessions.
 
-It gives an agent a small persistent memory with explicit remember, recall, and reinforce flows:
+It is meant for continuity:
 
-- `recall` loads the current memory set
-- `remember_short`, `remember_medium`, and `remember_long` create new memories with different initial strengths
-- `reinforce` strengthens memories that proved useful again
+- things worth remembering later
+- preferences that keep coming back
+- stable facts that should not be rediscovered every time
 
-The model is intentionally simple:
+It is not trying to be a knowledge base, a search engine, or a vector store.
 
-- one global memory pool
-- no sections
-- no search
-- no embeddings
-- no agent-visible scores
+The workflow is simple:
+
+- `recall` brings back the memories that are still alive
+- `remember_short` stores something that is probably useful only for a while
+- `remember_medium` stores something that may matter again later
+- `remember_long` stores something that should stick around
+- `reinforce` tells the system that a memory proved useful again
 
 ## Tools
 
@@ -70,7 +72,33 @@ The model is intentionally simple:
 | `remember_long` | Creates a new long-lived memory |
 | `reinforce` | Strengthens existing memories by id |
 
-## Memory Model
+## How Memory Behaves
+
+Memories are not all equal.
+
+- short memories fade quickly unless they keep proving useful
+- medium memories have more staying power
+- long memories are for durable facts and preferences
+
+You can think of it like this:
+
+- `remember_short` is for active working context
+- `remember_medium` is for context you expect to matter again
+- `remember_long` is for things that should be hard to lose
+
+`reinforce` is the important part: when a memory is genuinely useful again, reinforcing it helps it stay around.
+
+That means the system naturally drifts toward keeping what continues to matter and forgetting what does not.
+
+With the current defaults, a rough mental model is:
+
+- a short memory lasts about 5 recalls if it is never reinforced
+- a medium memory lasts about 25 recalls if it is never reinforced
+- a long memory lasts about 100 recalls if it is never reinforced
+
+These are not user-facing scores. They are just the internal mechanics behind what stays and what fades.
+
+## Stored File
 
 Each persisted memory contains:
 
@@ -85,7 +113,7 @@ Example file shape:
   "memories": [
     {
       "id": "260329142501",
-      "text": "Moldi prefers C#.",
+      "text": "The user prefers C#.",
       "retention": 10.0
     },
     {
@@ -97,24 +125,18 @@ Example file shape:
 }
 ```
 
-`retention` is internal. It controls:
-
-- recall order
-- decay over time
-- deletion of weak memories
-
-The agent does not see retention values or formulas.
+`retention` is internal. It controls which memories stay, which fade, and which disappear.
 
 ## Retrieval Model
 
 `recall` is the session-start tool.
 
-On every call it:
+From a user point of view, `recall` does two things at once:
 
-1. decays all memories
-2. deletes memories below the retention threshold
-3. persists those changes
-4. returns all surviving memories sorted by strength
+- it returns the memories that are still worth keeping around
+- it lets old, unused memories continue to fade
+
+So memory is not just read. It is also gently maintained.
 
 The response shape is minimal:
 
@@ -123,7 +145,7 @@ The response shape is minimal:
   "memories": [
     {
       "id": "260329142501",
-      "text": "Moldi prefers C#."
+      "text": "The user prefers C#."
     },
     {
       "id": "260329142530-2",
@@ -133,7 +155,7 @@ The response shape is minimal:
 }
 ```
 
-There is no search tool and no section-reading tool.
+There is no search tool and no section-reading tool. The design stays intentionally small.
 
 ## Storage Rules
 
@@ -152,6 +174,10 @@ Memory text must:
 
 ## Reinforcement
 
+Use `reinforce` when a memory turned out to be useful again, not just because it happened to be present.
+
+That keeps the memory set honest: memories survive because they helped, not because they existed.
+
 `reinforce` accepts a list of memory ids.
 
 - unknown ids fail the whole call
@@ -163,8 +189,8 @@ Memory text must:
 
 Use the tools roughly like this:
 
-- call `recall` at the start of a session
-- use `remember_short` for near-term working state
-- use `remember_medium` for context that may matter across future sessions
-- use `remember_long` for durable facts and stable preferences
-- use `reinforce` only for memories that proved useful again, not memories that were merely present
+- call `recall` at the start of each session
+- use `remember_short` for for work-related context that helps resume progress in future sessions (completed tasks, checkpoints, important findings)
+- use `remember_medium` for personal and work-related information that may evolve over time (preferences, hobbies, working style, favorite tools, music taste)
+- use `remember_long` for personal facts about the user or your relationship that are unlikely to change (name, identity, values, personality, vibe)
+- use `reinforce` when memories proved to be useful again during sessions
