@@ -14,6 +14,7 @@ public sealed class RecallToolTests : ToolTests<RecallTool>
 
         var response = await Sut.ExecuteAsync();
 
+        response.Count.Is(1);
         response.Memories.Count.Is(1);
         response.Memories[0].Id.Is("id-1");
         response.Memories[0].Text.Is("Remember this");
