@@ -6,33 +6,26 @@ using Xunit;
 
 namespace EngramMcp.Tools.Tests.Tools;
 
-public sealed class RememberLongToolTests
+public sealed class RememberLongToolTests : ToolTests<RememberLongTool>
 {
     [Fact]
     public async Task ExecuteAsync_stores_long_term_memory()
     {
-        var memoryService = new ToolTestMemoryService();
-        var tool = new RememberLongTool(memoryService);
-
-        var response = await tool.ExecuteAsync("Remember this");
+        var response = await Sut.ExecuteAsync("Remember this");
 
         response.Is("Stored long-term memory.");
-        memoryService.RememberedTier.Is(RetentionTier.Long);
-        memoryService.RememberedText.Is("Remember this");
+        MemoryService.RememberedTier.Is(RetentionTier.Long);
+        MemoryService.RememberedText.Is("Remember this");
     }
 
     [Fact]
     public async Task ExecuteAsync_returns_validation_message_from_memory_service()
     {
-        var memoryService = new ToolTestMemoryService
-        {
-            RememberResult = MemoryChangeResult.Reject("Memory text must not be null, empty, or whitespace.")
-        };
-        var tool = new RememberLongTool(memoryService);
+        MemoryService.RememberResult = MemoryChangeResult.Reject("Memory text must not be null, empty, or whitespace.");
 
-        var response = await tool.ExecuteAsync("");
+        var response = await Sut.ExecuteAsync("");
 
         response.Is("Memory text must not be null, empty, or whitespace.");
-        memoryService.RememberedText.Is("");
+        MemoryService.RememberedText.Is("");
     }
 }

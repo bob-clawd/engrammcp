@@ -6,7 +6,7 @@ using EngramMcp.Tools.Memory.Retention;
 using EngramMcp.Tools.Memory.Session;
 using EngramMcp.Tools.Memory.Storage;
 
-namespace EngramMcp.Tools.Extensions;
+namespace EngramMcp.Tools;
 
 public static class ServiceExtensions
 {
@@ -16,7 +16,7 @@ public static class ServiceExtensions
             .AddSingleton<IMemoryIdGenerator, TimestampMemoryIdGenerator>()
             .AddSingleton<IRetentionPolicy, DefaultRetentionPolicy>()
             .AddSingleton<SessionReinforcementTracker>()
-            .AddSingleton<EngramMcp.Tools.Memory.Storage.IMemoryStore>(_ => new EngramMcp.Tools.Memory.Storage.JsonMemoryStore(memoryFilePath))
+            .AddSingleton<IMemoryStore>(_ => new JsonMemoryStore(memoryFilePath))
             .AddSingleton<IMemoryService, CachedMemoryService>()
             .AddImplementations<Tool>();
 

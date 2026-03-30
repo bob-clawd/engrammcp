@@ -6,33 +6,26 @@ using Xunit;
 
 namespace EngramMcp.Tools.Tests.Tools;
 
-public sealed class RememberMediumToolTests
+public sealed class RememberMediumToolTests : ToolTests<RememberMediumTool>
 {
     [Fact]
     public async Task ExecuteAsync_stores_medium_term_memory()
     {
-        var memoryService = new ToolTestMemoryService();
-        var tool = new RememberMediumTool(memoryService);
-
-        var response = await tool.ExecuteAsync("Remember this");
+        var response = await Sut.ExecuteAsync("Remember this");
 
         response.Is("Stored medium-term memory.");
-        memoryService.RememberedTier.Is(RetentionTier.Medium);
-        memoryService.RememberedText.Is("Remember this");
+        MemoryService.RememberedTier.Is(RetentionTier.Medium);
+        MemoryService.RememberedText.Is("Remember this");
     }
 
     [Fact]
     public async Task ExecuteAsync_returns_validation_message_from_memory_service()
     {
-        var memoryService = new ToolTestMemoryService
-        {
-            RememberResult = MemoryChangeResult.Reject("Memory text must not be null, empty, or whitespace.")
-        };
-        var tool = new RememberMediumTool(memoryService);
+        MemoryService.RememberResult = MemoryChangeResult.Reject("Memory text must not be null, empty, or whitespace.");
 
-        var response = await tool.ExecuteAsync("");
+        var response = await Sut.ExecuteAsync("");
 
         response.Is("Memory text must not be null, empty, or whitespace.");
-        memoryService.RememberedText.Is("");
+        MemoryService.RememberedText.Is("");
     }
 }

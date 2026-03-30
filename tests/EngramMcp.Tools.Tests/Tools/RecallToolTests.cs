@@ -5,18 +5,14 @@ using Xunit;
 
 namespace EngramMcp.Tools.Tests.Tools;
 
-public sealed class RecallToolTests
+public sealed class RecallToolTests : ToolTests<RecallTool>
 {
     [Fact]
     public async Task ExecuteAsync_returns_memories_from_service()
     {
-        var memoryService = new ToolTestMemoryService
-        {
-            RecallResult = [new RecallMemory("id-1", "Remember this")]
-        };
-        var tool = new RecallTool(memoryService);
+        MemoryService.RecallResult = [new RecallMemory("id-1", "Remember this")];
 
-        var response = await tool.ExecuteAsync();
+        var response = await Sut.ExecuteAsync();
 
         response.Memories.Count.Is(1);
         response.Memories[0].Id.Is("id-1");

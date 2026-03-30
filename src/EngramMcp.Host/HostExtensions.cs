@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Protocol;
 using EngramMcp.Tools;
-using EngramMcp.Tools.Extensions;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;

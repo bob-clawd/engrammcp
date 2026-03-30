@@ -1,16 +1,16 @@
 using EngramMcp.Tools.Memory;
 using EngramMcp.Tools.Memory.Retention;
 
-namespace EngramMcp.Tools.Tests.Tools;
+namespace EngramMcp.Tools.Tests;
 
-internal sealed class ToolTestMemoryService : IMemoryService
+public sealed class ToolTestMemoryService : IMemoryService
 {
-    public MemoryChangeResult RememberResult { get; init; }
-    public MemoryChangeResult ReinforceResult { get; init; }
+    public MemoryChangeResult RememberResult { get; set; }
+    public MemoryChangeResult ReinforceResult { get; set; }
     public RetentionTier? RememberedTier { get; private set; }
     public string? RememberedText { get; private set; }
     public IReadOnlyList<string>? ReinforcedMemoryIds { get; private set; }
-    public IReadOnlyList<RecallMemory> RecallResult { get; init; } = [];
+    public IReadOnlyList<RecallMemory> RecallResult { get; set; } = [];
 
     public Task<IReadOnlyList<RecallMemory>> RecallAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(RecallResult);
