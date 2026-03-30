@@ -5,6 +5,7 @@ namespace EngramMcp.Tools.Tests.Tools;
 
 internal sealed class ToolTestMemoryService : IMemoryService
 {
+    public string? RememberResult { get; init; }
     public RetentionTier? RememberedTier { get; private set; }
     public string? RememberedText { get; private set; }
     public IReadOnlyList<string>? ReinforcedMemoryIds { get; private set; }
@@ -13,11 +14,11 @@ internal sealed class ToolTestMemoryService : IMemoryService
     public Task<IReadOnlyList<RecallMemory>> RecallAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(RecallResult);
 
-    public Task RememberAsync(RetentionTier retentionTier, string text, CancellationToken cancellationToken = default)
+    public Task<string?> RememberAsync(RetentionTier retentionTier, string text, CancellationToken cancellationToken = default)
     {
         RememberedTier = retentionTier;
         RememberedText = text;
-        return Task.CompletedTask;
+        return Task.FromResult(RememberResult);
     }
 
     public Task<string?> ReinforceAsync(IReadOnlyList<string> memoryIds, CancellationToken cancellationToken = default)

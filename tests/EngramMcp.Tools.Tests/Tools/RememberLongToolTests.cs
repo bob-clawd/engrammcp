@@ -18,4 +18,19 @@ public sealed class RememberLongToolTests
         memoryService.RememberedTier.Is(RetentionTier.Long);
         memoryService.RememberedText.Is("Remember this");
     }
+
+    [Fact]
+    public async Task ExecuteAsync_returns_validation_message_from_memory_service()
+    {
+        var memoryService = new ToolTestMemoryService
+        {
+            RememberResult = "Memory text must not be null, empty, or whitespace."
+        };
+        var tool = new EngramMcp.Tools.Tools.RememberLong.McpTool(memoryService);
+
+        var response = await tool.ExecuteAsync("");
+
+        response.Is("Memory text must not be null, empty, or whitespace.");
+        memoryService.RememberedText.Is("");
+    }
 }

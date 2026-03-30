@@ -43,9 +43,10 @@ public sealed class MemoryService(
         }
     }
 
-    public async Task RememberAsync(RetentionTier retentionTier, string text, CancellationToken cancellationToken = default)
+    public async Task<string?> RememberAsync(RetentionTier retentionTier, string text, CancellationToken cancellationToken = default)
     {
-        text = MemoryText.Validate(text);
+        if (MemoryText.GetValidationError(text) is { } error)
+            return error;
 
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -63,6 +64,7 @@ public sealed class MemoryService(
             document.Memories.Add(memory);
 
             await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
+            return null;
         }
         finally
         {

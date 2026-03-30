@@ -14,12 +14,7 @@ public sealed class McpTool(IMemoryService memoryService) : Tool
         string text,
         CancellationToken cancellationToken = default)
     {
-        var validationError = MemoryText.GetValidationError(text);
-
-        if (validationError is not null)
-            return validationError;
-
-        await memoryService.RememberAsync(RetentionTier.Short, text, cancellationToken).ConfigureAwait(false);
-        return "Stored short-term memory.";
+        var error = await memoryService.RememberAsync(RetentionTier.Short, text, cancellationToken).ConfigureAwait(false);
+        return error ?? "Stored short-term memory.";
     }
 }

@@ -38,12 +38,25 @@ public sealed class MemoryServiceTests
         var store = new InMemoryMemoryStore(new PersistedMemoryDocument());
         var service = CreateService(store, new FixedMemoryIdGenerator("260329142501"));
 
-        await service.RememberAsync(RetentionTier.Medium, "Remember this");
+        var error = await service.RememberAsync(RetentionTier.Medium, "Remember this");
 
+        error.IsNull();
         store.Document.Memories.Count.Is(1);
         store.Document.Memories[0].Id.Is("260329142501");
         store.Document.Memories[0].Text.Is("Remember this");
         store.Document.Memories[0].Retention.Is(25d);
+    }
+
+    [Fact]
+    public async Task RememberAsync_returns_validation_message_for_invalid_text()
+    {
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument());
+        var service = CreateService(store);
+
+        var error = await service.RememberAsync(RetentionTier.Short, "");
+
+        error.Is("Memory text must not be null, empty, or whitespace.");
+        store.Document.Memories.IsEmpty();
     }
 
     [Fact]

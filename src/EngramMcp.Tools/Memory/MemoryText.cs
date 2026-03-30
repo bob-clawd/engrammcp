@@ -2,7 +2,7 @@ namespace EngramMcp.Tools.Memory;
 
 internal static class MemoryText
 {
-    public const int MaxLength = 1000;
+    private const int MaxLength = 1000;
 
     public static string? GetValidationError(string? text)
     {
@@ -17,7 +17,7 @@ internal static class MemoryText
             : null;
     }
 
-    public static string Validate(string? text)
+    public static string RequireValid(string? text)
     {
         var validationError = GetValidationError(text);
 

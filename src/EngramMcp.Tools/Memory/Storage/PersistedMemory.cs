@@ -14,7 +14,7 @@ public sealed record PersistedMemory
     public required string Text
     {
         get => _text;
-        init => _text = MemoryText.Validate(value);
+        init => _text = MemoryText.RequireValid(value);
     }
 
     public required double Retention

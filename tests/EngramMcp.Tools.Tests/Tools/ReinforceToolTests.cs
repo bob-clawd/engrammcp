@@ -12,8 +12,8 @@ public sealed class ReinforceToolTests
         public Task<IReadOnlyList<RecallMemory>> RecallAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<RecallMemory>>([]);
 
-        public Task RememberAsync(RetentionTier retentionTier, string text, CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+        public Task<string?> RememberAsync(RetentionTier retentionTier, string text, CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
 
         public Task<string?> ReinforceAsync(IReadOnlyList<string> memoryIds, CancellationToken cancellationToken = default) =>
             Task.FromResult<string?>(errorMessage);
