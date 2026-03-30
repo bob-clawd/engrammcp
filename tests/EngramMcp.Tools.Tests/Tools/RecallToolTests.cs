@@ -1,4 +1,5 @@
 using EngramMcp.Tools.Memory;
+using EngramMcp.Tools.Tools;
 using Is.Assertions;
 using Xunit;
 
@@ -13,7 +14,7 @@ public sealed class RecallToolTests
         {
             RecallResult = [new RecallMemory("id-1", "Remember this")]
         };
-        var tool = new EngramMcp.Tools.Tools.Recall.RecallTool(memoryService);
+        var tool = new RecallTool(memoryService);
 
         var response = await tool.ExecuteAsync();
 

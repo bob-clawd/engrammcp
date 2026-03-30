@@ -2,7 +2,9 @@ using System.ComponentModel;
 using EngramMcp.Tools.Memory;
 using ModelContextProtocol.Server;
 
-namespace EngramMcp.Tools.Tools.Recall;
+namespace EngramMcp.Tools.Tools;
+
+public sealed record RecallResponse(IReadOnlyList<RecallMemory> Memories);
 
 public sealed class RecallTool(IMemoryService memoryService) : Tool
 {

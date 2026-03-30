@@ -1,5 +1,6 @@
 using EngramMcp.Tools.Memory;
 using EngramMcp.Tools.Memory.Retention;
+using EngramMcp.Tools.Tools;
 using Is.Assertions;
 using Xunit;
 
@@ -11,7 +12,7 @@ public sealed class RememberShortToolTests
     public async Task ExecuteAsync_stores_short_term_memory()
     {
         var memoryService = new ToolTestMemoryService();
-        var tool = new EngramMcp.Tools.Tools.RememberShort.RememberShortTool(memoryService);
+        var tool = new RememberShortTool(memoryService);
 
         var response = await tool.ExecuteAsync("Remember this");
 
@@ -27,7 +28,7 @@ public sealed class RememberShortToolTests
         {
             RememberResult = MemoryChangeResult.Reject("Memory text must not be null, empty, or whitespace.")
         };
-        var tool = new EngramMcp.Tools.Tools.RememberShort.RememberShortTool(memoryService);
+        var tool = new RememberShortTool(memoryService);
 
         var response = await tool.ExecuteAsync("");
 

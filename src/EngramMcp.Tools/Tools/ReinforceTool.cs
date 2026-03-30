@@ -2,7 +2,7 @@ using System.ComponentModel;
 using EngramMcp.Tools.Memory;
 using ModelContextProtocol.Server;
 
-namespace EngramMcp.Tools.Tools.Reinforce;
+namespace EngramMcp.Tools.Tools;
 
 public sealed class ReinforceTool(IMemoryService memoryService) : Tool
 {

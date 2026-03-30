@@ -1,5 +1,6 @@
 using EngramMcp.Tools.Memory;
 using EngramMcp.Tools.Memory.Retention;
+using EngramMcp.Tools.Tools;
 using Is.Assertions;
 using Xunit;
 
@@ -23,7 +24,7 @@ public sealed class ReinforceToolTests
     public async Task ExecuteAsync_reinforces_requested_memories()
     {
         var memoryService = new ToolTestMemoryService();
-        var tool = new EngramMcp.Tools.Tools.Reinforce.ReinforceTool(memoryService);
+        var tool = new ReinforceTool(memoryService);
 
         var response = await tool.ExecuteAsync(["id-1", "id-2"]);
 
@@ -37,7 +38,7 @@ public sealed class ReinforceToolTests
     [Fact]
     public async Task ExecuteAsync_returns_validation_message_for_invalid_input()
     {
-        var tool = new EngramMcp.Tools.Tools.Reinforce.ReinforceTool(new RejectingMemoryService("At least one memory id is required."));
+        var tool = new ReinforceTool(new RejectingMemoryService("At least one memory id is required."));
 
         var response = await tool.ExecuteAsync([]);
 

@@ -3,7 +3,7 @@ using EngramMcp.Tools.Memory;
 using EngramMcp.Tools.Memory.Retention;
 using ModelContextProtocol.Server;
 
-namespace EngramMcp.Tools.Tools.RememberShort;
+namespace EngramMcp.Tools.Tools;
 
 public sealed class RememberShortTool(IMemoryService memoryService) : Tool
 {
