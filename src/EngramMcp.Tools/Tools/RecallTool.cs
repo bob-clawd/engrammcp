@@ -6,7 +6,7 @@ namespace EngramMcp.Tools.Tools;
 
 public sealed record RecallResponse(IReadOnlyList<RecallMemory> Memories);
 
-public sealed class RecallTool(IMemoryService memoryService) : Tool
+public sealed class RecallTool(MemoryService memories) : Tool
 {
     private const int MaximumReturnedMemoryCount = 100;
 
@@ -14,8 +14,8 @@ public sealed class RecallTool(IMemoryService memoryService) : Tool
     [Description("Load up to the 100 strongest current memories. Useful at the start of a session.")]
     public async Task<RecallResponse> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        var memories = await memoryService.RecallAsync(cancellationToken).ConfigureAwait(false);
+        var recalledMemories = await memories.RecallAsync(cancellationToken).ConfigureAwait(false);
 
-        return new RecallResponse(memories.Take(MaximumReturnedMemoryCount).ToArray());
+        return new RecallResponse(recalledMemories.Take(MaximumReturnedMemoryCount).ToArray());
     }
 }

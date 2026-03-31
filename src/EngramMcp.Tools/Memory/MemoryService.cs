@@ -2,13 +2,12 @@ using EngramMcp.Tools.Memory.Storage;
 
 namespace EngramMcp.Tools.Memory;
 
-public sealed class CachedMemoryService(
+public sealed class MemoryService(
     IMemoryStore memoryStore,
     RetentionPolicy retentionPolicy,
-    Tracker tracker) : IMemoryService
+    Tracker tracker)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private PersistedMemoryDocument? _document;
 
     public async Task<IReadOnlyList<RecallMemory>> RecallAsync(CancellationToken cancellationToken = default)
     {
@@ -16,7 +15,7 @@ public sealed class CachedMemoryService(
 
         try
         {
-            var document = await LoadDocumentAsync(cancellationToken).ConfigureAwait(false);
+            var document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
 
             if (PruneDeleteableMemories(document))
                 await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
@@ -39,7 +38,7 @@ public sealed class CachedMemoryService(
 
         try
         {
-            var document = await LoadDocumentAsync(cancellationToken).ConfigureAwait(false);
+            var document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
             var memory = new PersistedMemory
             {
                 Id = IdGenerator.GetUniqueId(),
@@ -67,16 +66,13 @@ public sealed class CachedMemoryService(
 
         try
         {
-            var document = await LoadDocumentAsync(cancellationToken).ConfigureAwait(false);
-            var memoryIndexesById = document.Memories
-                .Select((memory, index) => new KeyValuePair<string, int>(memory.Id, index))
-                .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+            var document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
 
-            if (GetUnknownMemoryId(memoryIds, memoryIndexesById) is { } unknownMemoryId)
+            if (GetUnknownMemoryId(memoryIds, document.Memories) is { } unknownMemoryId)
                 return MemoryChangeResult.Reject($"Unknown memory '{unknownMemoryId}'.");
 
             var changedRetention = ApplyGlobalWeakeningIfFirstTime(document);
-            changedRetention |= ReinforceMemories(document, memoryIndexesById, memoryIds.Distinct(StringComparer.Ordinal));
+            changedRetention |= ReinforceMemories(document, memoryIds);
 
             if (changedRetention)
                 await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
@@ -89,16 +85,6 @@ public sealed class CachedMemoryService(
         }
     }
 
-    private async Task<PersistedMemoryDocument> LoadDocumentAsync(CancellationToken cancellationToken)
-    {
-        if (_document is not null)
-            return _document;
-
-        await memoryStore.EnsureInitializedAsync(cancellationToken).ConfigureAwait(false);
-        _document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
-        return _document;
-    }
-
     private bool PruneDeleteableMemories(PersistedMemoryDocument document) =>
         document.Memories.RemoveAll(memory => retentionPolicy.ShouldDelete(memory.Retention)) > 0;
 
@@ -108,11 +94,15 @@ public sealed class CachedMemoryService(
             .Select(memory => new RecallMemory(memory.Id, memory.Text))
             .ToArray();
 
-    private string? GetUnknownMemoryId(IReadOnlyList<string> memoryIds, IReadOnlyDictionary<string, int> memoryIndexesById)
+    private static string? GetUnknownMemoryId(IReadOnlyList<string> memoryIds, IReadOnlyList<PersistedMemory> memories)
     {
+        var knownMemoryIds = memories
+            .Select(memory => memory.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
         foreach (var memoryId in memoryIds)
         {
-            if (string.IsNullOrWhiteSpace(memoryId) || !memoryIndexesById.ContainsKey(memoryId))
+            if (string.IsNullOrWhiteSpace(memoryId) || !knownMemoryIds.Contains(memoryId))
                 return memoryId;
         }
 
@@ -133,14 +123,18 @@ public sealed class CachedMemoryService(
         return true;
     }
 
-    private bool ReinforceMemories(PersistedMemoryDocument document, IReadOnlyDictionary<string, int> memoryIndexesById, IEnumerable<string> memoryIds)
+    private bool ReinforceMemories(PersistedMemoryDocument document, IReadOnlyList<string> memoryIds)
     {
+        var requestedMemoryIds = memoryIds.ToHashSet(StringComparer.Ordinal);
         var changedRetention = false;
 
-        foreach (var memoryId in memoryIds.Where(tracker.Reinforced))
+        for (var index = 0; index < document.Memories.Count; index++)
         {
-            var index = memoryIndexesById[memoryId];
             var memory = document.Memories[index];
+
+            if (!requestedMemoryIds.Contains(memory.Id) || !tracker.Reinforced(memory.Id))
+                continue;
+
             document.Memories[index] = memory with { Retention = retentionPolicy.Reinforce(memory.Retention) };
             changedRetention = true;
         }

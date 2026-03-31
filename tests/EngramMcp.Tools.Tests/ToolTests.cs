@@ -1,4 +1,5 @@
 using EngramMcp.Tools.Memory;
+using EngramMcp.Tools.Memory.Storage;
 using EngramMcp.Tools.Tests.Tools;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,16 +11,15 @@ public abstract class ToolTests<TTool> : IDisposable where TTool : notnull
 
     protected TTool Sut { get; }
 
-    protected ToolTestMemoryService MemoryService { get; }
+    protected InMemoryMemoryStore Store { get; }
 
     protected ToolTests()
     {
-        MemoryService = new ToolTestMemoryService();
+        Store = new InMemoryMemoryStore(new PersistedMemoryDocument());
 
         ServiceProvider = new ServiceCollection()
             .WithEngramMcp(Path.Combine(Path.GetTempPath(), "engram-mcp-tools-tests", "memory.json"))
-            .AddSingleton(MemoryService)
-            .AddSingleton<IMemoryService>(MemoryService)
+            .AddSingleton<IMemoryStore>(Store)
             .BuildServiceProvider();
 
         Sut = ServiceProvider.GetRequiredService<TTool>();

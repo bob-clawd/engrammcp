@@ -58,7 +58,7 @@ public sealed class MemoryServiceTests
     }
 
     [Fact]
-    public async Task RecallAsync_keeps_the_loaded_document_for_the_service_lifetime()
+    public async Task RecallAsync_loads_the_current_document_each_time()
     {
         var store = new InMemoryMemoryStore(new PersistedMemoryDocument());
         var service = CreateService(store);
@@ -75,7 +75,9 @@ public sealed class MemoryServiceTests
 
         var memories = await service.RecallAsync();
 
-        memories.IsEmpty();
+        memories.Count.Is(1);
+        memories[0].Id.Is("id-1");
+        memories[0].Text.Is("Updated outside the service");
     }
 
     [Fact]
@@ -262,28 +264,11 @@ public sealed class MemoryServiceTests
         memories.Single().Is(new RecallMemory("id-1", "Known memory"));
     }
 
-    private static CachedMemoryService CreateService(InMemoryMemoryStore store)
+    private static MemoryService CreateService(InMemoryMemoryStore store)
     {
-        return new CachedMemoryService(
+        return new MemoryService(
             store,
             new RetentionPolicy(),
             new Tracker());
-    }
-
-    private sealed class InMemoryMemoryStore(PersistedMemoryDocument document) : IMemoryStore
-    {
-        public PersistedMemoryDocument Document { get; private set; } = document;
-
-        public void Replace(PersistedMemoryDocument document) => Document = document;
-
-        public Task EnsureInitializedAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-        public Task<PersistedMemoryDocument> LoadAsync(CancellationToken cancellationToken = default) => Task.FromResult(Document);
-
-        public Task SaveAsync(PersistedMemoryDocument document, CancellationToken cancellationToken = default)
-        {
-            Document = document;
-            return Task.CompletedTask;
-        }
     }
 }

@@ -1,4 +1,3 @@
-using EngramMcp.Tools.Memory;
 using EngramMcp.Tools.Tools;
 using Is.Assertions;
 using Xunit;
@@ -12,19 +11,18 @@ public sealed class RememberLongToolTests : ToolTests<RememberLongTool>
     {
         var response = await Sut.ExecuteAsync("Remember this");
 
-        response.Is("Stored long-term memory.");
-        MemoryService.RememberedTier.Is(RetentionTier.Long);
-        MemoryService.RememberedText.Is("Remember this");
+        response.IsNull();
+        Store.Document.Memories.Count.Is(1);
+        Store.Document.Memories[0].Text.Is("Remember this");
+        Store.Document.Memories[0].Retention.Is(100d);
     }
 
     [Fact]
     public async Task ExecuteAsync_returns_validation_message_from_memory_service()
     {
-        MemoryService.RememberResult = MemoryChangeResult.Reject("Memory text must not be null, empty, or whitespace.");
-
         var response = await Sut.ExecuteAsync("");
 
         response.Is("Memory text must not be null, empty, or whitespace.");
-        MemoryService.RememberedText.Is("");
+        Store.Document.Memories.IsEmpty();
     }
 }

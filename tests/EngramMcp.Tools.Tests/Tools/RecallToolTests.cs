@@ -1,4 +1,5 @@
 using EngramMcp.Tools.Memory;
+using EngramMcp.Tools.Memory.Storage;
 using EngramMcp.Tools.Tools;
 using Is.Assertions;
 using Xunit;
@@ -10,7 +11,13 @@ public sealed class RecallToolTests : ToolTests<RecallTool>
     [Fact]
     public async Task ExecuteAsync_returns_memories_from_service()
     {
-        MemoryService.RecallResult = [new RecallMemory("id-1", "Remember this")];
+        Store.Replace(new PersistedMemoryDocument
+        {
+            Memories =
+            [
+                new PersistedMemory { Id = "id-1", Text = "Remember this", Retention = 10 }
+            ]
+        });
 
         var response = await Sut.ExecuteAsync();
 
@@ -22,9 +29,12 @@ public sealed class RecallToolTests : ToolTests<RecallTool>
     [Fact]
     public async Task ExecuteAsync_caps_returned_memories_at_100()
     {
-        MemoryService.RecallResult = Enumerable.Range(1, 101)
-            .Select(index => new RecallMemory($"id-{index}", $"Memory {index}"))
-            .ToArray();
+        Store.Replace(new PersistedMemoryDocument
+        {
+            Memories = Enumerable.Range(1, 101)
+                .Select(index => new PersistedMemory { Id = $"id-{index}", Text = $"Memory {index}", Retention = 102 - index })
+                .ToList()
+        });
 
         var response = await Sut.ExecuteAsync();
 
