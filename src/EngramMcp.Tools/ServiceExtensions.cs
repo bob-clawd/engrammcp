@@ -16,7 +16,7 @@ public static class ServiceExtensions
         private IServiceCollection AddInfrastructure(string memoryFilePath) => services
             .AddSingleton<IdGenerator>()
             .AddSingleton<RetentionPolicy>()
-            .AddSingleton<SessionReinforcementTracker>()
+            .AddSingleton<Tracker>()
             .AddSingleton<IMemoryStore>(_ => new JsonMemoryStore(memoryFilePath))
             .AddSingleton<IMemoryService, CachedMemoryService>();
         

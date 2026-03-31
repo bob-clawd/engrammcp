@@ -6,7 +6,7 @@ public sealed class CachedMemoryService(
     IMemoryStore memoryStore,
     IdGenerator memoryIdGenerator,
     RetentionPolicy retentionPolicy,
-    SessionReinforcementTracker reinforcementTracker) : IMemoryService
+    Tracker tracker) : IMemoryService
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private PersistedMemoryDocument? _document;
@@ -22,7 +22,7 @@ public sealed class CachedMemoryService(
             if (PruneDeleteableMemories(document))
                 await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
 
-            reinforcementTracker.Reset();
+            tracker.Reset();
             return RecallMemories(document);
         }
         finally
@@ -122,7 +122,7 @@ public sealed class CachedMemoryService(
 
     private bool ApplyGlobalWeakeningIfFirstTime(PersistedMemoryDocument document)
     {
-        if (!reinforcementTracker.MarkGlobalWeakeningAppliedIfFirstTime())
+        if (!tracker.Decayed())
             return false;
 
         for (var index = 0; index < document.Memories.Count; index++)
@@ -138,11 +138,8 @@ public sealed class CachedMemoryService(
     {
         var changedRetention = false;
 
-        foreach (var memoryId in memoryIds)
+        foreach (var memoryId in memoryIds.Where(tracker.Reinforced))
         {
-            if (!reinforcementTracker.MarkReinforcedIfFirstTime(memoryId))
-                continue;
-
             var index = memoryIndexesById[memoryId];
             var memory = document.Memories[index];
             document.Memories[index] = memory with { Retention = retentionPolicy.Reinforce(memory.Retention) };

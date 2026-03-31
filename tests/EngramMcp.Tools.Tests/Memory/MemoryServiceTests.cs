@@ -268,7 +268,7 @@ public sealed class MemoryServiceTests
             store,
             memoryIdGenerator ?? new IdGenerator(),
             new RetentionPolicy(),
-            new SessionReinforcementTracker());
+            new Tracker());
     }
 
     private sealed class InMemoryMemoryStore(PersistedMemoryDocument document) : IMemoryStore
