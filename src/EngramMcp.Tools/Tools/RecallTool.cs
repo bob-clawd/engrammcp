@@ -4,7 +4,7 @@ using ModelContextProtocol.Server;
 
 namespace EngramMcp.Tools.Tools;
 
-public sealed record RecallResponse(int ReturnedCount, int TotalCount, IReadOnlyList<RecallMemory> Memories);
+public sealed record RecallResponse(IReadOnlyList<RecallMemory> Memories);
 
 public sealed class RecallTool(IMemoryService memoryService) : Tool
 {
@@ -15,7 +15,7 @@ public sealed class RecallTool(IMemoryService memoryService) : Tool
     public async Task<RecallResponse> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         var memories = await memoryService.RecallAsync(cancellationToken).ConfigureAwait(false);
-        var returnedMemories = memories.Take(MaximumReturnedMemoryCount).ToArray();
-        return new RecallResponse(returnedMemories.Length, memories.Count, returnedMemories);
+
+        return new RecallResponse(memories.Take(MaximumReturnedMemoryCount).ToArray());
     }
 }
