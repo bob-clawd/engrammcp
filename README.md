@@ -125,7 +125,7 @@ That is the core experience: continuity shaped by relevance, not by accumulation
 ```
 
 Treat memory ids as opaque values.
-They are only meant to be passed back to `reinforce`.
+They are only meant to be passed back to `reinforce` or `forget`.
 
 ## Prompting Matters
 

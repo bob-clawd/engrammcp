@@ -11,7 +11,7 @@ public sealed record RecallResponse(
 
 public sealed class RecallTool(MemoryService memories) : Tool
 {
-    private const int MaximumReturnedMemoryCount = 50;
+    private const int DefaultReturnedMemoryCount = 50;
 
     [McpServerTool(Name = "recall", Title = "Recall Memories")]
     [Description("Load the strongest current memories. Useful at the start of a session. Defaults to returning up to 50 memories unless a maxCount is provided.")]
@@ -24,7 +24,7 @@ public sealed class RecallTool(MemoryService memories) : Tool
 
         var effectiveMaxCount = maxCount.GetValueOrDefault();
         if (effectiveMaxCount <= 0)
-            effectiveMaxCount = MaximumReturnedMemoryCount;
+            effectiveMaxCount = DefaultReturnedMemoryCount;
 
         var selected = recalledMemories.Take(effectiveMaxCount).ToArray();
         return new RecallResponse(selected.Length, recalledMemories.Count, selected);
