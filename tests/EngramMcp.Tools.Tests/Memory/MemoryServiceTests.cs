@@ -264,11 +264,5 @@ public sealed class MemoryServiceTests
         memories.Single().Is(new RecallMemory("id-1", "Known memory"));
     }
 
-    private static MemoryService CreateService(InMemoryMemoryStore store)
-    {
-        return new MemoryService(
-            store,
-            new RetentionPolicy(),
-            new Tracker());
-    }
+    private static MemoryService CreateService(InMemoryMemoryStore store) => new MemoryService(store, new RetentionCycle());
 }

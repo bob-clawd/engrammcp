@@ -4,8 +4,7 @@ namespace EngramMcp.Tools.Memory;
 
 public sealed class MemoryService(
     IMemoryStore memoryStore,
-    RetentionPolicy retentionPolicy,
-    Tracker tracker)
+    RetentionCycle retentionCycle)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
@@ -20,7 +19,7 @@ public sealed class MemoryService(
             if (PruneDeleteableMemories(document))
                 await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
 
-            tracker.Reset();
+            retentionCycle.Reset();
             return RecallMemories(document);
         }
         finally
@@ -43,7 +42,7 @@ public sealed class MemoryService(
             {
                 Id = IdGenerator.GetUniqueId(),
                 Text = text,
-                Retention = retentionPolicy.CreateInitialRetention(retentionTier)
+                Retention = retentionTier.ToValue()
             };
 
             document.Memories.Add(memory);
@@ -59,7 +58,7 @@ public sealed class MemoryService(
 
     public async Task<MemoryChangeResult> ReinforceAsync(IReadOnlyList<string> memoryIds, CancellationToken cancellationToken = default)
     {
-        if (memoryIds is null || memoryIds.Count == 0)
+        if (memoryIds.Count == 0)
             return MemoryChangeResult.Reject("At least one memory id is required.");
 
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -87,7 +86,7 @@ public sealed class MemoryService(
 
     public async Task<MemoryChangeResult> ForgetAsync(IReadOnlyList<string> memoryIds, CancellationToken cancellationToken = default)
     {
-        if (memoryIds is null || memoryIds.Count == 0)
+        if (memoryIds.Count == 0)
             return MemoryChangeResult.Reject("At least one memory id is required.");
 
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -112,10 +111,10 @@ public sealed class MemoryService(
         }
     }
 
-    private bool PruneDeleteableMemories(PersistedMemoryDocument document) =>
-        document.Memories.RemoveAll(memory => retentionPolicy.ShouldDelete(memory.Retention)) > 0;
+    private static bool PruneDeleteableMemories(PersistedMemoryDocument document) =>
+        document.Memories.RemoveAll(memory => memory.Retention.ShouldDelete()) > 0;
 
-    private IReadOnlyList<RecallMemory> RecallMemories(PersistedMemoryDocument document) =>
+    private static IReadOnlyList<RecallMemory> RecallMemories(PersistedMemoryDocument document) =>
         document.Memories
             .OrderByDescending(memory => memory.Retention)
             .Select(memory => new RecallMemory(memory.Id, memory.Text))
@@ -127,24 +126,18 @@ public sealed class MemoryService(
             .Select(memory => memory.Id)
             .ToHashSet(StringComparer.Ordinal);
 
-        foreach (var memoryId in memoryIds)
-        {
-            if (string.IsNullOrWhiteSpace(memoryId) || !knownMemoryIds.Contains(memoryId))
-                return memoryId;
-        }
-
-        return null;
+        return memoryIds.FirstOrDefault(memoryId => string.IsNullOrWhiteSpace(memoryId) || !knownMemoryIds.Contains(memoryId));
     }
 
     private bool ApplyGlobalWeakeningIfFirstTime(PersistedMemoryDocument document)
     {
-        if (!tracker.Decayed())
+        if (!retentionCycle.CanDecay())
             return false;
 
         for (var index = 0; index < document.Memories.Count; index++)
         {
             var memory = document.Memories[index];
-            document.Memories[index] = memory with { Retention = retentionPolicy.Decay(memory.Retention) };
+            document.Memories[index] = memory with { Retention = memory.Retention.Decay() };
         }
 
         return true;
@@ -159,10 +152,10 @@ public sealed class MemoryService(
         {
             var memory = document.Memories[index];
 
-            if (!requestedMemoryIds.Contains(memory.Id) || !tracker.Reinforced(memory.Id))
+            if (!requestedMemoryIds.Contains(memory.Id) || !retentionCycle.CanReinforce(memory.Id))
                 continue;
 
-            document.Memories[index] = memory with { Retention = retentionPolicy.Reinforce(memory.Retention) };
+            document.Memories[index] = memory with { Retention = memory.Retention.Reinforce() };
             changedRetention = true;
         }
 
