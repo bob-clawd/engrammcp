@@ -10,14 +10,10 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task RecallAsync_prunes_deleteable_memories_without_decay()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "a", Text = "keep", Retention = 10 },
-                new PersistedMemory { Id = "b", Text = "drop", Retention = 0.9 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "a", Text = "keep", Retention = 10 },
+            new PersistedMemory { Id = "b", Text = "drop", Retention = 0.9 }
+        ]));
         var service = CreateService(store);
 
         var memories = await service.RecallAsync();
@@ -65,13 +61,9 @@ public sealed class MemoryServiceTests
 
         (await service.RecallAsync()).IsEmpty();
 
-        store.Replace(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "id-1", Text = "Updated outside the service", Retention = 10 }
-            ]
-        });
+        store.Replace(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "id-1", Text = "Updated outside the service", Retention = 10 }
+        ]));
 
         var memories = await service.RecallAsync();
 
@@ -83,13 +75,9 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task ReinforceAsync_rejects_unknown_ids_atomically_without_consuming_cycle_weakening()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "known", Text = "Known memory", Retention = 10 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "known", Text = "Known memory", Retention = 10 }
+        ]));
         var service = CreateService(store);
 
         var rejected = await service.ReinforceAsync(["known", "missing"]);
@@ -105,14 +93,10 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task ReinforceAsync_first_successful_call_in_cycle_weakens_all_memories_once_and_strengthens_selected_ids()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "a", Text = "Selected", Retention = 10 },
-                new PersistedMemory { Id = "b", Text = "Other", Retention = 7 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "a", Text = "Selected", Retention = 10 },
+            new PersistedMemory { Id = "b", Text = "Other", Retention = 7 }
+        ]));
         var service = CreateService(store);
 
         var result = await service.ReinforceAsync(["a"]);
@@ -126,14 +110,10 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task ReinforceAsync_second_successful_call_in_same_cycle_does_not_weaken_again()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "a", Text = "First", Retention = 10 },
-                new PersistedMemory { Id = "b", Text = "Second", Retention = 10 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "a", Text = "First", Retention = 10 },
+            new PersistedMemory { Id = "b", Text = "Second", Retention = 10 }
+        ]));
         var service = CreateService(store);
 
         await service.ReinforceAsync(["a"]);
@@ -146,13 +126,9 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task ReinforceAsync_ignores_second_reinforcement_of_same_memory_in_same_cycle()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "known", Text = "Known memory", Retention = 10 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "known", Text = "Known memory", Retention = 10 }
+        ]));
         var service = CreateService(store);
 
         await service.ReinforceAsync(["known"]);
@@ -164,13 +140,9 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task RecallAsync_resets_reinforcement_cycle()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "known", Text = "Known memory", Retention = 10 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "known", Text = "Known memory", Retention = 10 }
+        ]));
         var service = CreateService(store);
 
         await service.ReinforceAsync(["known"]);
@@ -183,13 +155,9 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task Repeated_recalls_without_reinforcement_leave_memory_unchanged()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "short", Text = "Temporary note", Retention = 5 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "short", Text = "Temporary note", Retention = 5 }
+        ]));
         var service = CreateService(store);
 
         for (var recall = 1; recall <= 5; recall++)
@@ -202,14 +170,10 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task Memory_weakened_below_delete_threshold_can_still_be_reinforced_before_next_recall()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "a", Text = "Anchor", Retention = 10 },
-                new PersistedMemory { Id = "b", Text = "Recoverable", Retention = 1.9 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "a", Text = "Anchor", Retention = 10 },
+            new PersistedMemory { Id = "b", Text = "Recoverable", Retention = 1.9 }
+        ]));
         var service = CreateService(store);
 
         await service.ReinforceAsync(["a"]);
@@ -224,14 +188,10 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task RecallAsync_prunes_memories_that_remain_below_delete_threshold_after_a_cycle()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "a", Text = "Anchor", Retention = 10 },
-                new PersistedMemory { Id = "b", Text = "Expired", Retention = 1.2 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "a", Text = "Anchor", Retention = 10 },
+            new PersistedMemory { Id = "b", Text = "Expired", Retention = 1.2 }
+        ]));
         var service = CreateService(store);
 
         await service.ReinforceAsync(["a"]);
@@ -250,13 +210,9 @@ public sealed class MemoryServiceTests
     [Fact]
     public async Task RecallAsync_returns_only_id_and_text_shape()
     {
-        var store = new InMemoryMemoryStore(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "id-1", Text = "Known memory", Retention = 10 }
-            ]
-        });
+        var store = new InMemoryMemoryStore(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "id-1", Text = "Known memory", Retention = 10 }
+        ]));
         var service = CreateService(store);
 
         var memories = await service.RecallAsync();

@@ -96,7 +96,7 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
             if (!string.IsNullOrEmpty(directoryPath))
                 Directory.CreateDirectory(directoryPath);
 
-            document.SortMemoriesByDescendingRetention();
+            document.Sort();
             var json = JsonSerializer.Serialize(document, SerializerOptions);
             await File.WriteAllTextAsync(_filePath, json, cancellationToken).ConfigureAwait(false);
         }

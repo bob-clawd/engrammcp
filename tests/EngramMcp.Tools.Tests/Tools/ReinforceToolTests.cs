@@ -10,14 +10,10 @@ public sealed class ReinforceToolTests : ToolTests<ReinforceTool>
     [Fact]
     public async Task ExecuteAsync_reinforces_requested_memories()
     {
-        Store.Replace(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "id-1", Text = "First memory", Retention = 10 },
-                new PersistedMemory { Id = "id-2", Text = "Second memory", Retention = 10 }
-            ]
-        });
+        Store.Replace(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "id-1", Text = "First memory", Retention = 10 },
+            new PersistedMemory { Id = "id-2", Text = "Second memory", Retention = 10 }
+        ]));
 
         var response = await Sut.ExecuteAsync(["id-1", "id-2"]);
 

@@ -10,14 +10,10 @@ public sealed class ForgetToolTests : ToolTests<ForgetTool>
     [Fact]
     public async Task ExecuteAsync_deletes_requested_memories()
     {
-        Store.Replace(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "id-1", Text = "First memory", Retention = 10 },
-                new PersistedMemory { Id = "id-2", Text = "Second memory", Retention = 10 }
-            ]
-        });
+        Store.Replace(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "id-1", Text = "First memory", Retention = 10 },
+            new PersistedMemory { Id = "id-2", Text = "Second memory", Retention = 10 }
+        ]));
 
         var response = await Sut.ExecuteAsync(["id-1"]);
 
@@ -37,17 +33,12 @@ public sealed class ForgetToolTests : ToolTests<ForgetTool>
     [Fact]
     public async Task ExecuteAsync_returns_validation_message_for_unknown_memory()
     {
-        Store.Replace(new PersistedMemoryDocument
-        {
-            Memories =
-            [
-                new PersistedMemory { Id = "id-1", Text = "First memory", Retention = 10 }
-            ]
-        });
+        Store.Replace(new PersistedMemoryDocument([
+            new PersistedMemory { Id = "id-1", Text = "First memory", Retention = 10 }
+        ]));
 
         var response = await Sut.ExecuteAsync(["id-2"]);
 
         response.Is("Unknown memory 'id-2'.");
     }
 }
-
