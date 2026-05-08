@@ -44,6 +44,32 @@ public sealed class JsonMemoryStoreTests
     }
 
     [Fact]
+    public async Task SaveAsync_orders_memories_by_retention_descending()
+    {
+        using var memoryFile = new TemporaryMemoryFile();
+        var store = new JsonMemoryStore(memoryFile.FilePath);
+
+        await store.SaveAsync(new PersistedMemoryDocument
+        {
+            Memories =
+            [
+                new PersistedMemory { Id = "weak", Text = "Weak", Retention = 1 },
+                new PersistedMemory { Id = "strong", Text = "Strong", Retention = 10 },
+                new PersistedMemory { Id = "middle", Text = "Middle", Retention = 5 }
+            ]
+        });
+
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(memoryFile.FilePath));
+        var memoryIds = document.RootElement
+            .GetProperty("memories")
+            .EnumerateArray()
+            .Select(memory => memory.GetProperty("id").GetString())
+            .ToArray();
+
+        memoryIds.Is(["strong", "middle", "weak"]);
+    }
+
+    [Fact]
     public async Task LoadAsync_reads_existing_memories_from_json_file()
     {
         using var memoryFile = new TemporaryMemoryFile();
