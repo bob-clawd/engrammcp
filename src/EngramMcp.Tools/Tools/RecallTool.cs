@@ -7,7 +7,8 @@ namespace EngramMcp.Tools.Tools;
 public sealed record RecallResponse(
     IReadOnlyList<RecallMemory> Memories);
 
-public sealed class RecallTool(MemoryService memories) : Tool
+[McpServerToolType]
+public sealed class RecallTool(MemoryService memories)
 {
     private const int DefaultReturnedMemoryCount = 50;
 

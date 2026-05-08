@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 
 namespace EngramMcp.Tools.Tools;
 
-public sealed class ForgetTool(MemoryService memories) : Tool
+[McpServerToolType]
+public sealed class ForgetTool(MemoryService memories)
 {
     [McpServerTool(Name = "forget", Title = "Forget Memories")]
     [Description("Delete memories by id. Use this when a previously stored memory is wrong or no longer relevant. Prefer targeted deletions; do not mass-delete without a clear reason.")]
@@ -17,4 +18,3 @@ public sealed class ForgetTool(MemoryService memories) : Tool
         return result.Rejection;
     }
 }
-

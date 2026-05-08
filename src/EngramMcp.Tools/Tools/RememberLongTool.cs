@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 
 namespace EngramMcp.Tools.Tools;
 
-public sealed class RememberLongTool(MemoryService memories) : Tool
+[McpServerToolType]
+public sealed class RememberLongTool(MemoryService memories)
 {
     [McpServerTool(Name = "remember_long", Title = "Remember Long")]
     [Description("Store information expected to remain valid over long periods. Use for durable facts, stable constraints, or information with low expected change frequency.")]

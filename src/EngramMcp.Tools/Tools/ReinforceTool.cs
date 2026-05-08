@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 
 namespace EngramMcp.Tools.Tools;
 
-public sealed class ReinforceTool(MemoryService memories) : Tool
+[McpServerToolType]
+public sealed class ReinforceTool(MemoryService memories)
 {
     [McpServerTool(Name = "reinforce", Title = "Reinforce Memories")]
     [Description("Strengthen recalled memories that materially influenced your work in the current session. Do not reinforce memories merely because they were present.")]

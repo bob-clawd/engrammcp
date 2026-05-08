@@ -16,6 +16,7 @@ TestResults/
 
 tmp/
 docs/
+specs/
 .nupkg/
 
 # EngramMcp local memory store (default)

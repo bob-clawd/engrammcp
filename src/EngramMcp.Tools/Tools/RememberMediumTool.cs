@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 
 namespace EngramMcp.Tools.Tools;
 
-public sealed class RememberMediumTool(MemoryService memories) : Tool
+[McpServerToolType]
+public sealed class RememberMediumTool(MemoryService memories)
 {
     [McpServerTool(Name = "remember_medium", Title = "Remember Medium")]
     [Description("Store information that is useful across sessions but may change over time. Use for evolving preferences, personal events, decisions made, lessons learned.")]

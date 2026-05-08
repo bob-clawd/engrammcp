@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 
 namespace EngramMcp.Tools.Tools;
 
-public sealed class RememberShortTool(MemoryService memories) : Tool
+[McpServerToolType]
+public sealed class RememberShortTool(MemoryService memories)
 {
     [McpServerTool(Name = "remember_short", Title = "Remember Short")]
     [Description("Store session-level context that helps future continuation. Use for recent progress, temporary working context, intermediate conclusions, or resume points.")]
