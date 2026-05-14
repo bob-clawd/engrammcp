@@ -17,7 +17,7 @@ public static class ServiceExtensions
         private IServiceCollection AddInfrastructure(string memoryFilePath) => services
             .AddSingleton<RetentionCycle>()
             .AddSingleton<MemoryService>()
-            .AddSingleton<IMemoryStore>(_ => new JsonMemoryStore(memoryFilePath));
+            .AddSingleton<IMemoryStore>(_ => new JsonlMemoryStore(memoryFilePath));
         
         private IServiceCollection AddTools()
         {

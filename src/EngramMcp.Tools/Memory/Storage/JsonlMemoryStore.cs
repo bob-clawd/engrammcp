@@ -3,17 +3,17 @@ using System.Text.Json;
 
 namespace EngramMcp.Tools.Memory.Storage;
 
-public sealed class JsonMemoryStore(string filePath) : IMemoryStore
+public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
     private readonly string _filePath = ResolvePath(filePath);
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly JsonlFile<PersistedMemory> _file = new(ResolvePath(filePath), SerializerOptions);
 
     public Task EnsureInitializedAsync(CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(EnsureInitializedCoreAsync, cancellationToken);
@@ -28,17 +28,21 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
         return ExecuteExclusiveAsync(innerCancellationToken => SaveCoreAsync(document, innerCancellationToken), cancellationToken);
     }
 
-    private async Task EnsureInitializedCoreAsync(CancellationToken cancellationToken)
+    private Task EnsureInitializedCoreAsync(CancellationToken cancellationToken)
     {
-        var directoryPath = Path.GetDirectoryName(_filePath);
+        cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
+            var directoryPath = Path.GetDirectoryName(_filePath);
+
             if (!string.IsNullOrEmpty(directoryPath))
                 Directory.CreateDirectory(directoryPath);
 
             if (!File.Exists(_filePath))
-                await SaveCoreAsync(new PersistedMemoryDocument(), cancellationToken).ConfigureAwait(false);
+                _file.RewriteAll([], cancellationToken);
+
+            return Task.CompletedTask;
         }
         catch (UnauthorizedAccessException exception)
         {
@@ -57,23 +61,20 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
 
         try
         {
-            var json = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
-            PersistedMemoryDocument? document;
-
-            try
+            if (await TryLoadLegacyJsonDocumentAsync(cancellationToken).ConfigureAwait(false) is { } legacyDocument)
             {
-                document = JsonSerializer.Deserialize<PersistedMemoryDocument>(json, SerializerOptions);
-            }
-            catch (JsonException exception)
-            {
-                throw new InvalidOperationException($"Memory file '{_filePath}' contains malformed JSON.", exception);
+                await SaveCoreAsync(legacyDocument, cancellationToken).ConfigureAwait(false);
+                return legacyDocument;
             }
 
-            if (document is null)
-                throw new InvalidOperationException($"Memory file '{_filePath}' contains an invalid JSON document.");
-
+            var memories = _file.ReadAll(cancellationToken);
+            var document = new PersistedMemoryDocument(memories);
             ValidateDocument(document);
             return document;
+        }
+        catch (InvalidDataException exception)
+        {
+            throw new InvalidOperationException($"Memory file '{_filePath}' contains malformed JSONL.", exception);
         }
         catch (UnauthorizedAccessException exception)
         {
@@ -85,20 +86,15 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private async Task SaveCoreAsync(PersistedMemoryDocument document, CancellationToken cancellationToken)
+    private Task SaveCoreAsync(PersistedMemoryDocument document, CancellationToken cancellationToken)
     {
         ValidateDocument(document);
 
         try
         {
-            var directoryPath = Path.GetDirectoryName(_filePath);
-
-            if (!string.IsNullOrEmpty(directoryPath))
-                Directory.CreateDirectory(directoryPath);
-
             document.Sort();
-            var json = JsonSerializer.Serialize(document, SerializerOptions);
-            await File.WriteAllTextAsync(_filePath, json, cancellationToken).ConfigureAwait(false);
+            _file.RewriteAll(document.Memories, cancellationToken);
+            return Task.CompletedTask;
         }
         catch (UnauthorizedAccessException exception)
         {
@@ -107,6 +103,40 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
         catch (IOException exception)
         {
             throw new InvalidOperationException($"Memory file path '{_filePath}' could not be written.", exception);
+        }
+    }
+
+    private async Task<PersistedMemoryDocument?> TryLoadLegacyJsonDocumentAsync(CancellationToken cancellationToken)
+    {
+        var content = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(content))
+            return new PersistedMemoryDocument();
+
+        var firstNonWhitespace = content.FirstOrDefault(character => !char.IsWhiteSpace(character));
+        if (firstNonWhitespace != '{')
+            return null;
+
+        if (!content.Contains("\"memories\"", StringComparison.Ordinal))
+            return null;
+
+        try
+        {
+            using var jsonDocument = JsonDocument.Parse(content);
+            if (jsonDocument.RootElement.ValueKind != JsonValueKind.Object ||
+                !jsonDocument.RootElement.TryGetProperty("memories", out _))
+            {
+                return null;
+            }
+
+            var document = JsonSerializer.Deserialize<PersistedMemoryDocument>(content, SerializerOptions)
+                ?? throw new InvalidOperationException($"Memory file '{_filePath}' contains an invalid JSON document.");
+
+            ValidateDocument(document);
+            return document;
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException($"Memory file '{_filePath}' contains malformed JSON.", exception);
         }
     }
 
