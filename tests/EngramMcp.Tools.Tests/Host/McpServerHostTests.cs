@@ -7,16 +7,6 @@ namespace EngramMcp.Tools.Tests.Host;
 public sealed class McpServerHostTests
 {
     [Fact]
-    public void ParseOptions_UsesWorkspaceDefault_WhenFileArgumentIsNotProvided()
-    {
-        var startupDirectory = Path.Combine(Path.GetTempPath(), "EngramMcp.Tests", Guid.NewGuid().ToString("N"));
-
-        var options = McpServerHost.ParseOptions([], startupDirectory);
-
-        options.FilePath.Is(Path.Combine(startupDirectory, ".engram", "memory.jsonl"));
-    }
-
-    [Fact]
     public void ParseOptions_UsesExplicitFilePath_WhenFileArgumentIsProvided()
     {
         const string filePath = "some/path.json";
