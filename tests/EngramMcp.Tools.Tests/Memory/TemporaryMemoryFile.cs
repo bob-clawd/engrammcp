@@ -8,7 +8,7 @@ internal sealed class TemporaryMemoryFile : IDisposable
     {
         _directoryPath = Path.Combine(Path.GetTempPath(), "EngramMcp.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_directoryPath);
-        FilePath = Path.Combine(_directoryPath, "memory.json");
+        FilePath = Path.Combine(_directoryPath, "memory.jsonl");
     }
 
     public string FilePath { get; }

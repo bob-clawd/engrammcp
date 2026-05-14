@@ -61,12 +61,6 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
 
         try
         {
-            if (await TryLoadLegacyJsonDocumentAsync(cancellationToken).ConfigureAwait(false) is { } legacyMemories)
-            {
-                await SaveCoreAsync(legacyMemories, cancellationToken).ConfigureAwait(false);
-                return legacyMemories;
-            }
-
             var memories = _file.ReadAll(cancellationToken);
             ValidateMemories(memories);
             return memories.ToList();
@@ -106,40 +100,6 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
         catch (IOException exception)
         {
             throw new InvalidOperationException($"Memory file path '{_filePath}' could not be written.", exception);
-        }
-    }
-
-    private async Task<List<PersistedMemory>?> TryLoadLegacyJsonDocumentAsync(CancellationToken cancellationToken)
-    {
-        var content = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(content))
-            return [];
-
-        var firstNonWhitespace = content.FirstOrDefault(character => !char.IsWhiteSpace(character));
-        if (firstNonWhitespace != '{')
-            return null;
-
-        if (!content.Contains("\"memories\"", StringComparison.Ordinal))
-            return null;
-
-        try
-        {
-            using var jsonDocument = JsonDocument.Parse(content);
-            if (jsonDocument.RootElement.ValueKind != JsonValueKind.Object ||
-                !jsonDocument.RootElement.TryGetProperty("memories", out _))
-            {
-                return null;
-            }
-
-            var document = JsonSerializer.Deserialize<LegacyMemoryDocument>(content, SerializerOptions)
-                ?? throw new InvalidOperationException($"Memory file '{_filePath}' contains an invalid JSON document.");
-
-            ValidateMemories(document.Memories);
-            return document.Memories.ToList();
-        }
-        catch (JsonException exception)
-        {
-            throw new InvalidOperationException($"Memory file '{_filePath}' contains malformed JSON.", exception);
         }
     }
 
@@ -200,8 +160,4 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private sealed class LegacyMemoryDocument
-    {
-        public List<PersistedMemory> Memories { get; init; } = [];
-    }
 }

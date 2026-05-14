@@ -78,30 +78,4 @@ public sealed class JsonlMemoryStoreTests
         document[0].Retention.Is(10d);
     }
 
-    [Fact]
-    public async Task LoadAsync_migrates_legacy_json_document_to_jsonl()
-    {
-        using var memoryFile = new TemporaryMemoryFile();
-
-        await File.WriteAllTextAsync(memoryFile.FilePath, """
-        {
-          "memories": [
-            {
-              "id": "260329142501",
-              "text": "Remember project detail",
-              "retention": 10
-            }
-          ]
-        }
-        """);
-
-        var store = new JsonlMemoryStore(memoryFile.FilePath);
-
-        var document = await store.LoadAsync();
-        var lines = await File.ReadAllLinesAsync(memoryFile.FilePath);
-
-        document.Count.Is(1);
-        lines.Length.Is(1);
-        lines[0].StartsWith("{\"id\":", StringComparison.Ordinal).IsTrue();
-    }
 }

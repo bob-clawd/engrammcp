@@ -27,7 +27,7 @@ public sealed class HostExtensionsTests
     {
         var services = new ServiceCollection();
 
-        services.Compose(new MemoryFileOptions { FilePath = "memory.json" });
+        services.Compose(new MemoryFileOptions { FilePath = "memory.jsonl" });
 
         using var serviceProvider = services.BuildServiceProvider();
         var options = serviceProvider.GetRequiredService<IOptions<McpServerOptions>>().Value;
@@ -43,7 +43,7 @@ public sealed class HostExtensionsTests
     {
         var services = new ServiceCollection();
 
-        services.Compose(new MemoryFileOptions { FilePath = "memory.json" });
+        services.Compose(new MemoryFileOptions { FilePath = "memory.jsonl" });
 
         using var serviceProvider = services.BuildServiceProvider();
         serviceProvider.GetRequiredService<EngramMcp.Tools.Memory.Storage.IMemoryStore>().Is<JsonlMemoryStore>();
