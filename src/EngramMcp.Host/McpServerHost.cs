@@ -48,7 +48,7 @@ public static class McpServerHost
             }
         }
 
-        filePath ??= Path.Combine(startupDirectory, ".engram", "memory.json");
+        filePath ??= Path.Combine(startupDirectory, ".engram", "memory.jsonl");
 
         return new MemoryFileOptions
         {

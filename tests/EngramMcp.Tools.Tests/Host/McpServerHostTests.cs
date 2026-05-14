@@ -13,7 +13,7 @@ public sealed class McpServerHostTests
 
         var options = McpServerHost.ParseOptions([], startupDirectory);
 
-        options.FilePath.Is(Path.Combine(startupDirectory, ".engram", "memory.json"));
+        options.FilePath.Is(Path.Combine(startupDirectory, ".engram", "memory.jsonl"));
     }
 
     [Fact]

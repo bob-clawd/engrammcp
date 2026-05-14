@@ -14,13 +14,13 @@ public sealed class MemoryService(
 
         try
         {
-            var document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
+            var memories = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
 
-            if (PruneDeleteableMemories(document))
-                await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
+            if (PruneDeleteableMemories(memories))
+                await memoryStore.SaveAsync(memories, cancellationToken).ConfigureAwait(false);
 
             retentionCycle.Reset();
-            return RecallMemories(document);
+            return RecallMemories(memories);
         }
         finally
         {
@@ -37,7 +37,7 @@ public sealed class MemoryService(
 
         try
         {
-            var document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
+            var memories = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
             var memory = new PersistedMemory
             {
                 Id = IdGenerator.GetUniqueId(),
@@ -45,9 +45,9 @@ public sealed class MemoryService(
                 Retention = retentionTier.ToValue()
             };
 
-            document.Memories.Add(memory);
+            memories.Add(memory);
 
-            await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
+            await memoryStore.SaveAsync(memories, cancellationToken).ConfigureAwait(false);
             return MemoryChangeResult.Success();
         }
         finally
@@ -65,16 +65,16 @@ public sealed class MemoryService(
 
         try
         {
-            var document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
+            var memories = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
 
-            if (GetUnknownMemoryId(memoryIds, document.Memories) is { } unknownMemoryId)
+            if (GetUnknownMemoryId(memoryIds, memories) is { } unknownMemoryId)
                 return MemoryChangeResult.Reject($"Unknown memory '{unknownMemoryId}'.");
 
-            var changedRetention = ApplyGlobalWeakeningIfFirstTime(document);
-            changedRetention |= ReinforceMemories(document, memoryIds);
+            var changedRetention = ApplyGlobalWeakeningIfFirstTime(memories);
+            changedRetention |= ReinforceMemories(memories, memoryIds);
 
             if (changedRetention)
-                await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
+                await memoryStore.SaveAsync(memories, cancellationToken).ConfigureAwait(false);
 
             return MemoryChangeResult.Success();
         }
@@ -93,15 +93,15 @@ public sealed class MemoryService(
 
         try
         {
-            var document = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
+            var memories = await memoryStore.LoadAsync(cancellationToken).ConfigureAwait(false);
 
-            if (GetUnknownMemoryId(memoryIds, document.Memories) is { } unknownMemoryId)
+            if (GetUnknownMemoryId(memoryIds, memories) is { } unknownMemoryId)
                 return MemoryChangeResult.Reject($"Unknown memory '{unknownMemoryId}'.");
 
             var requestedMemoryIds = memoryIds.ToHashSet(StringComparer.Ordinal);
-            var removedCount = document.Memories.RemoveAll(memory => requestedMemoryIds.Contains(memory.Id));
+            var removedCount = memories.RemoveAll(memory => requestedMemoryIds.Contains(memory.Id));
             if (removedCount > 0)
-                await memoryStore.SaveAsync(document, cancellationToken).ConfigureAwait(false);
+                await memoryStore.SaveAsync(memories, cancellationToken).ConfigureAwait(false);
 
             return MemoryChangeResult.Success();
         }
@@ -111,11 +111,11 @@ public sealed class MemoryService(
         }
     }
 
-    private static bool PruneDeleteableMemories(PersistedMemoryDocument document) =>
-        document.Memories.RemoveAll(memory => memory.Retention.ShouldDelete()) > 0;
+    private static bool PruneDeleteableMemories(List<PersistedMemory> memories) =>
+        memories.RemoveAll(memory => memory.Retention.ShouldDelete()) > 0;
 
-    private static IReadOnlyList<RecallMemory> RecallMemories(PersistedMemoryDocument document) =>
-        document.Memories
+    private static IReadOnlyList<RecallMemory> RecallMemories(IReadOnlyList<PersistedMemory> memories) =>
+        memories
             .OrderByDescending(memory => memory.Retention)
             .Select(memory => new RecallMemory(memory.Id, memory.Text))
             .ToArray();
@@ -129,33 +129,33 @@ public sealed class MemoryService(
         return memoryIds.FirstOrDefault(memoryId => string.IsNullOrWhiteSpace(memoryId) || !knownMemoryIds.Contains(memoryId));
     }
 
-    private bool ApplyGlobalWeakeningIfFirstTime(PersistedMemoryDocument document)
+    private bool ApplyGlobalWeakeningIfFirstTime(List<PersistedMemory> memories)
     {
         if (!retentionCycle.CanDecay())
             return false;
 
-        for (var index = 0; index < document.Memories.Count; index++)
+        for (var index = 0; index < memories.Count; index++)
         {
-            var memory = document.Memories[index];
-            document.Memories[index] = memory with { Retention = memory.Retention.Decay() };
+            var memory = memories[index];
+            memories[index] = memory with { Retention = memory.Retention.Decay() };
         }
 
         return true;
     }
 
-    private bool ReinforceMemories(PersistedMemoryDocument document, IReadOnlyList<string> memoryIds)
+    private bool ReinforceMemories(List<PersistedMemory> memories, IReadOnlyList<string> memoryIds)
     {
         var requestedMemoryIds = memoryIds.ToHashSet(StringComparer.Ordinal);
         var changedRetention = false;
 
-        for (var index = 0; index < document.Memories.Count; index++)
+        for (var index = 0; index < memories.Count; index++)
         {
-            var memory = document.Memories[index];
+            var memory = memories[index];
 
             if (!requestedMemoryIds.Contains(memory.Id) || !retentionCycle.CanReinforce(memory.Id))
                 continue;
 
-            document.Memories[index] = memory with { Retention = memory.Retention.Reinforce() };
+            memories[index] = memory with { Retention = memory.Retention.Reinforce() };
             changedRetention = true;
         }
 

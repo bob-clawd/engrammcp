@@ -3,42 +3,46 @@ using System.Text.Json;
 
 namespace EngramMcp.Tools.Memory.Storage;
 
-public sealed class JsonMemoryStore(string filePath) : IMemoryStore
+public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
     private readonly string _filePath = ResolvePath(filePath);
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly JsonlFile<PersistedMemory> _file = new(ResolvePath(filePath), SerializerOptions);
 
     public Task EnsureInitializedAsync(CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(EnsureInitializedCoreAsync, cancellationToken);
 
-    public Task<PersistedMemoryDocument> LoadAsync(CancellationToken cancellationToken = default) =>
+    public Task<List<PersistedMemory>> LoadAsync(CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(LoadCoreAsync, cancellationToken);
 
-    public Task SaveAsync(PersistedMemoryDocument document, CancellationToken cancellationToken = default)
+    public Task SaveAsync(IReadOnlyList<PersistedMemory> memories, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(memories);
 
-        return ExecuteExclusiveAsync(innerCancellationToken => SaveCoreAsync(document, innerCancellationToken), cancellationToken);
+        return ExecuteExclusiveAsync(innerCancellationToken => SaveCoreAsync(memories, innerCancellationToken), cancellationToken);
     }
 
-    private async Task EnsureInitializedCoreAsync(CancellationToken cancellationToken)
+    private Task EnsureInitializedCoreAsync(CancellationToken cancellationToken)
     {
-        var directoryPath = Path.GetDirectoryName(_filePath);
+        cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
+            var directoryPath = Path.GetDirectoryName(_filePath);
+
             if (!string.IsNullOrEmpty(directoryPath))
                 Directory.CreateDirectory(directoryPath);
 
             if (!File.Exists(_filePath))
-                await SaveCoreAsync(new PersistedMemoryDocument(), cancellationToken).ConfigureAwait(false);
+                _file.RewriteAll([], cancellationToken);
+
+            return Task.CompletedTask;
         }
         catch (UnauthorizedAccessException exception)
         {
@@ -50,30 +54,20 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private async Task<PersistedMemoryDocument> LoadCoreAsync(CancellationToken cancellationToken)
+    private async Task<List<PersistedMemory>> LoadCoreAsync(CancellationToken cancellationToken)
     {
         await EnsureInitializedCoreAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
-            var json = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
-            PersistedMemoryDocument? document;
-
-            try
-            {
-                document = JsonSerializer.Deserialize<PersistedMemoryDocument>(json, SerializerOptions);
-            }
-            catch (JsonException exception)
-            {
-                throw new InvalidOperationException($"Memory file '{_filePath}' contains malformed JSON.", exception);
-            }
-
-            if (document is null)
-                throw new InvalidOperationException($"Memory file '{_filePath}' contains an invalid JSON document.");
-
-            ValidateDocument(document);
-            return document;
+            var memories = _file.ReadAll(cancellationToken);
+            ValidateMemories(memories);
+            return memories.ToList();
+        }
+        catch (InvalidDataException exception)
+        {
+            throw new InvalidOperationException($"Memory file '{_filePath}' contains malformed JSONL.", exception);
         }
         catch (UnauthorizedAccessException exception)
         {
@@ -85,20 +79,19 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private async Task SaveCoreAsync(PersistedMemoryDocument document, CancellationToken cancellationToken)
+    private Task SaveCoreAsync(IReadOnlyList<PersistedMemory> memories, CancellationToken cancellationToken)
     {
-        ValidateDocument(document);
+        ValidateMemories(memories);
 
         try
         {
-            var directoryPath = Path.GetDirectoryName(_filePath);
+            var sortedMemories = memories
+                .OrderByDescending(memory => memory.Retention)
+                .ThenBy(memory => memory.Id, StringComparer.Ordinal)
+                .ToArray();
 
-            if (!string.IsNullOrEmpty(directoryPath))
-                Directory.CreateDirectory(directoryPath);
-
-            document.Sort();
-            var json = JsonSerializer.Serialize(document, SerializerOptions);
-            await File.WriteAllTextAsync(_filePath, json, cancellationToken).ConfigureAwait(false);
+            _file.RewriteAll(sortedMemories, cancellationToken);
+            return Task.CompletedTask;
         }
         catch (UnauthorizedAccessException exception)
         {
@@ -110,14 +103,11 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private static void ValidateDocument(PersistedMemoryDocument document)
+    private static void ValidateMemories(IReadOnlyList<PersistedMemory> memories)
     {
-        if (document.Memories is null)
-            throw new InvalidOperationException("Memory file has invalid structure. 'memories' must be an array.");
-
         var ids = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var memory in document.Memories)
+        foreach (var memory in memories)
         {
             if (memory is null)
                 throw new InvalidOperationException("Memory file has invalid structure. Memory entries must not be null.");
@@ -169,4 +159,5 @@ public sealed class JsonMemoryStore(string filePath) : IMemoryStore
             throw new InvalidOperationException($"Memory file path '{configuredPath}' is invalid.", exception);
         }
     }
+
 }
