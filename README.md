@@ -25,7 +25,7 @@ dotnet tool install -g EngramMcp
 
 ## Configuration
 
-By default, EngramMcp stores memory in `.engram/memory.jsonl` under the current workspace directory.
+By default, EngramMcp stores memory in `memory.jsonl` under the current workspace directory.
 
 Startup options:
 
@@ -48,6 +48,13 @@ Example:
     }
   }
 }
+```
+
+The memory file itself uses JSONL: one JSON object per line.
+
+```jsonl
+{"id":"mcvx3n9k","text":"The user prefers C#.","retention":100}
+{"id":"mcvx3n9m","text":"Use Roslyn tools proactively for C# exploration.","retention":25}
 ```
 
 ## What It Is For
