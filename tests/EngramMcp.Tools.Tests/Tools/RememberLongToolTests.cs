@@ -12,9 +12,9 @@ public sealed class RememberLongToolTests : ToolTests<RememberLongTool>
         var response = await Sut.ExecuteAsync("Remember this");
 
         response.IsNull();
-        Store.Document.Memories.Count.Is(1);
-        Store.Document.Memories[0].Text.Is("Remember this");
-        Store.Document.Memories[0].Retention.Is(100d);
+        Store.Memories.Count.Is(1);
+        Store.Memories[0].Text.Is("Remember this");
+        Store.Memories[0].Retention.Is(100d);
     }
 
     [Fact]
@@ -23,6 +23,6 @@ public sealed class RememberLongToolTests : ToolTests<RememberLongTool>
         var response = await Sut.ExecuteAsync("");
 
         response.Is("Memory text must not be null, empty, or whitespace.");
-        Store.Document.Memories.IsEmpty();
+        Store.Memories.IsEmpty();
     }
 }

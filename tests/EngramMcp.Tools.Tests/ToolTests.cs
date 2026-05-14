@@ -15,7 +15,7 @@ public abstract class ToolTests<TTool> : IDisposable where TTool : notnull
 
     protected ToolTests()
     {
-        Store = new InMemoryMemoryStore(new PersistedMemoryDocument());
+        Store = new InMemoryMemoryStore([]);
 
         ServiceProvider = new ServiceCollection()
             .WithEngramMcp(Path.Combine(Path.GetTempPath(), "engram-mcp-tools-tests", "memory.json"))

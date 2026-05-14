@@ -11,9 +11,9 @@ public sealed class RecallToolTests : ToolTests<RecallTool>
     [Fact]
     public async Task ExecuteAsync_returns_memories_from_service()
     {
-        Store.Replace(new PersistedMemoryDocument([
+        Store.Replace([
             new PersistedMemory { Id = "id-1", Text = "Remember this", Retention = 10 }
-        ]));
+        ]);
 
         var response = await Sut.ExecuteAsync();
 
@@ -25,8 +25,9 @@ public sealed class RecallToolTests : ToolTests<RecallTool>
     [Fact]
     public async Task ExecuteAsync_caps_returned_memories_at_50_by_default()
     {
-        Store.Replace(new PersistedMemoryDocument(Enumerable.Range(1, 101)
-            .Select(index => new PersistedMemory { Id = $"id-{index}", Text = $"Memory {index}", Retention = 102 - index })));
+        Store.Replace(Enumerable.Range(1, 101)
+            .Select(index => new PersistedMemory { Id = $"id-{index}", Text = $"Memory {index}", Retention = 102 - index })
+            .ToList());
 
         var response = await Sut.ExecuteAsync();
 

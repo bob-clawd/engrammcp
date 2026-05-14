@@ -18,14 +18,14 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
     public Task EnsureInitializedAsync(CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(EnsureInitializedCoreAsync, cancellationToken);
 
-    public Task<PersistedMemoryDocument> LoadAsync(CancellationToken cancellationToken = default) =>
+    public Task<List<PersistedMemory>> LoadAsync(CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(LoadCoreAsync, cancellationToken);
 
-    public Task SaveAsync(PersistedMemoryDocument document, CancellationToken cancellationToken = default)
+    public Task SaveAsync(IReadOnlyList<PersistedMemory> memories, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(memories);
 
-        return ExecuteExclusiveAsync(innerCancellationToken => SaveCoreAsync(document, innerCancellationToken), cancellationToken);
+        return ExecuteExclusiveAsync(innerCancellationToken => SaveCoreAsync(memories, innerCancellationToken), cancellationToken);
     }
 
     private Task EnsureInitializedCoreAsync(CancellationToken cancellationToken)
@@ -54,23 +54,22 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private async Task<PersistedMemoryDocument> LoadCoreAsync(CancellationToken cancellationToken)
+    private async Task<List<PersistedMemory>> LoadCoreAsync(CancellationToken cancellationToken)
     {
         await EnsureInitializedCoreAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
-            if (await TryLoadLegacyJsonDocumentAsync(cancellationToken).ConfigureAwait(false) is { } legacyDocument)
+            if (await TryLoadLegacyJsonDocumentAsync(cancellationToken).ConfigureAwait(false) is { } legacyMemories)
             {
-                await SaveCoreAsync(legacyDocument, cancellationToken).ConfigureAwait(false);
-                return legacyDocument;
+                await SaveCoreAsync(legacyMemories, cancellationToken).ConfigureAwait(false);
+                return legacyMemories;
             }
 
             var memories = _file.ReadAll(cancellationToken);
-            var document = new PersistedMemoryDocument(memories);
-            ValidateDocument(document);
-            return document;
+            ValidateMemories(memories);
+            return memories.ToList();
         }
         catch (InvalidDataException exception)
         {
@@ -86,14 +85,18 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private Task SaveCoreAsync(PersistedMemoryDocument document, CancellationToken cancellationToken)
+    private Task SaveCoreAsync(IReadOnlyList<PersistedMemory> memories, CancellationToken cancellationToken)
     {
-        ValidateDocument(document);
+        ValidateMemories(memories);
 
         try
         {
-            document.Sort();
-            _file.RewriteAll(document.Memories, cancellationToken);
+            var sortedMemories = memories
+                .OrderByDescending(memory => memory.Retention)
+                .ThenBy(memory => memory.Id, StringComparer.Ordinal)
+                .ToArray();
+
+            _file.RewriteAll(sortedMemories, cancellationToken);
             return Task.CompletedTask;
         }
         catch (UnauthorizedAccessException exception)
@@ -106,11 +109,11 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private async Task<PersistedMemoryDocument?> TryLoadLegacyJsonDocumentAsync(CancellationToken cancellationToken)
+    private async Task<List<PersistedMemory>?> TryLoadLegacyJsonDocumentAsync(CancellationToken cancellationToken)
     {
         var content = await File.ReadAllTextAsync(_filePath, cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(content))
-            return new PersistedMemoryDocument();
+            return [];
 
         var firstNonWhitespace = content.FirstOrDefault(character => !char.IsWhiteSpace(character));
         if (firstNonWhitespace != '{')
@@ -128,11 +131,11 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
                 return null;
             }
 
-            var document = JsonSerializer.Deserialize<PersistedMemoryDocument>(content, SerializerOptions)
+            var document = JsonSerializer.Deserialize<LegacyMemoryDocument>(content, SerializerOptions)
                 ?? throw new InvalidOperationException($"Memory file '{_filePath}' contains an invalid JSON document.");
 
-            ValidateDocument(document);
-            return document;
+            ValidateMemories(document.Memories);
+            return document.Memories.ToList();
         }
         catch (JsonException exception)
         {
@@ -140,14 +143,11 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
         }
     }
 
-    private static void ValidateDocument(PersistedMemoryDocument document)
+    private static void ValidateMemories(IReadOnlyList<PersistedMemory> memories)
     {
-        if (document.Memories is null)
-            throw new InvalidOperationException("Memory file has invalid structure. 'memories' must be an array.");
-
         var ids = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var memory in document.Memories)
+        foreach (var memory in memories)
         {
             if (memory is null)
                 throw new InvalidOperationException("Memory file has invalid structure. Memory entries must not be null.");
@@ -198,5 +198,10 @@ public sealed class JsonlMemoryStore(string filePath) : IMemoryStore
         {
             throw new InvalidOperationException($"Memory file path '{configuredPath}' is invalid.", exception);
         }
+    }
+
+    private sealed class LegacyMemoryDocument
+    {
+        public List<PersistedMemory> Memories { get; init; } = [];
     }
 }

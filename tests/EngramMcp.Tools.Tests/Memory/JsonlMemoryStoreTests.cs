@@ -25,9 +25,9 @@ public sealed class JsonlMemoryStoreTests
         using var memoryFile = new TemporaryMemoryFile();
         var store = new JsonlMemoryStore(memoryFile.FilePath);
 
-        await store.SaveAsync(new PersistedMemoryDocument([
+        await store.SaveAsync([
             new PersistedMemory { Id = "260329142501", Text = "Durable fact", Retention = 10 }
-        ]));
+        ]);
 
         var lines = await File.ReadAllLinesAsync(memoryFile.FilePath);
 
@@ -42,12 +42,12 @@ public sealed class JsonlMemoryStoreTests
         using var memoryFile = new TemporaryMemoryFile();
         var store = new JsonlMemoryStore(memoryFile.FilePath);
 
-        await store.SaveAsync(new PersistedMemoryDocument([
+        await store.SaveAsync([
             new PersistedMemory { Id = "weak", Text = "Weak", Retention = 1 },
             new PersistedMemory { Id = "200", Text = "Newer strong", Retention = 10 },
             new PersistedMemory { Id = "middle", Text = "Middle", Retention = 5 },
             new PersistedMemory { Id = "100", Text = "Older strong", Retention = 10 },
-        ]));
+        ]);
 
         var lines = await File.ReadAllLinesAsync(memoryFile.FilePath);
         var memoryIds = lines
@@ -72,10 +72,10 @@ public sealed class JsonlMemoryStoreTests
 
         var document = await store.LoadAsync();
 
-        document.Memories.Count.Is(2);
-        document.Memories[0].Id.Is("260329142501");
-        document.Memories[0].Text.Is("Remember project detail");
-        document.Memories[0].Retention.Is(10d);
+        document.Count.Is(2);
+        document[0].Id.Is("260329142501");
+        document[0].Text.Is("Remember project detail");
+        document[0].Retention.Is(10d);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class JsonlMemoryStoreTests
         var document = await store.LoadAsync();
         var lines = await File.ReadAllLinesAsync(memoryFile.FilePath);
 
-        document.Memories.Count.Is(1);
+        document.Count.Is(1);
         lines.Length.Is(1);
         lines[0].StartsWith("{\"id\":", StringComparison.Ordinal).IsTrue();
     }

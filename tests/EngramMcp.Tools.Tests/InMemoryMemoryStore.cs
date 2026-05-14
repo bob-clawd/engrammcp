@@ -2,19 +2,19 @@ using EngramMcp.Tools.Memory.Storage;
 
 namespace EngramMcp.Tools.Tests;
 
-public sealed class InMemoryMemoryStore(PersistedMemoryDocument document) : IMemoryStore
+public sealed class InMemoryMemoryStore(List<PersistedMemory> memories) : IMemoryStore
 {
-    public PersistedMemoryDocument Document { get; private set; } = document;
+    public List<PersistedMemory> Memories { get; private set; } = memories;
 
-    public void Replace(PersistedMemoryDocument document) => Document = document;
+    public void Replace(List<PersistedMemory> memories) => Memories = memories;
 
     public Task EnsureInitializedAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    public Task<PersistedMemoryDocument> LoadAsync(CancellationToken cancellationToken = default) => Task.FromResult(Document);
+    public Task<List<PersistedMemory>> LoadAsync(CancellationToken cancellationToken = default) => Task.FromResult(Memories);
 
-    public Task SaveAsync(PersistedMemoryDocument document, CancellationToken cancellationToken = default)
+    public Task SaveAsync(IReadOnlyList<PersistedMemory> memories, CancellationToken cancellationToken = default)
     {
-        Document = document;
+        Memories = memories.ToList();
         return Task.CompletedTask;
     }
 }
